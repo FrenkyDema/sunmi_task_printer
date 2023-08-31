@@ -62,7 +62,7 @@ public class SunmiTaskPrinterMethod {
     /**
      * Bind printer service.
      */
-    public void bindPrinterService() {
+    public void bindService() {
         Intent intent = new Intent();
         intent.setPackage("woyou.aidlservice.jiuiv5");
         intent.setAction("woyou.aidlservice.jiuiv5.IWoyouService");
@@ -72,7 +72,7 @@ public class SunmiTaskPrinterMethod {
     /**
      * Unbind printer service.
      */
-    public void unbindPrinterService() {
+    public void unbindService() {
         _context.unbindService(connService);
     }
 

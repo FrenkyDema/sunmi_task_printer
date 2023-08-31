@@ -41,22 +41,23 @@ class SunmiTaskPrinter {
     return await _channel.invokeMethod('getPlatformVersion');
   }
 
-  ///*bindingPrinter*
+  ///*bindingService*
   ///
-  ///This method will initialize the printer to start the whole print.
+  ///This method will initialize the service to start the whole print.
   ///This method *Must* be executed before any other print and LCD command.
-  static Future<bool?> bindingPrinter() async {
-    final bool? status = await _channel.invokeMethod('BIND_PRINTER_SERVICE');
+  ///This method *Must* be executed before any drawer command.
+  static Future<bool?> bindingService() async {
+    final bool? status = await _channel.invokeMethod('BIND_SERVICE');
     return status;
   }
 
-  ///*unbindingPrinter*
+  ///*unbindingService*
   ///
-  ///This method is the opposite of [bindingPrinter].
-  ///This will unbind or 'close' the connection with the printer, and must be the last execution.
+  ///This method is the opposite of [bindingService].
+  ///This will unbind or 'close' the connection with the service, and must be the last execution.
 
-  static Future<bool?> unbindingPrinter() async {
-    final bool? status = await _channel.invokeMethod('UNBIND_PRINTER_SERVICE');
+  static Future<bool?> unbindingService() async {
+    final bool? status = await _channel.invokeMethod('UNBIND_SERVICE');
     return status;
   }
 

@@ -80,7 +80,7 @@ class _HomeState extends State<Home> {
 
   /// must binding ur printer at first init in app
   Future<bool?> _bindingPrinter() async {
-    final bool? result = await SunmiTaskPrinter.bindingPrinter();
+    final bool? result = await SunmiTaskPrinter.bindingService();
     return result;
   }
 
@@ -452,6 +452,16 @@ class _HomeState extends State<Home> {
                         await SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: const Text('Custom ESC/POS to print')),
+                ]),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                  ElevatedButton(
+                      onPressed: () async {
+                        await SunmiTaskPrinter.openDrawer();
+                      },
+                      child: const Text('Open Drawer')),
                 ]),
               ),
             ],

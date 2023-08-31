@@ -48,13 +48,13 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                 case "getPlatformVersion":
                     result.success("Android " + android.os.Build.VERSION.RELEASE);
                     break;
-                case "BIND_PRINTER_SERVICE":
-                    sunmiTaskPrinterMethod.bindPrinterService();
+                case "BIND_SERVICE":
+                    sunmiTaskPrinterMethod.bindService();
                     result.success(true);
 
                     break;
-                case "UNBIND_PRINTER_SERVICE":
-                    sunmiTaskPrinterMethod.unbindPrinterService();
+                case "UNBIND_SERVICE":
+                    sunmiTaskPrinterMethod.unbindService();
                     result.success(true);
 
                     break;
