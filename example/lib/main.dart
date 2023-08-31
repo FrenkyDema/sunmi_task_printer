@@ -445,10 +445,10 @@ class _HomeState extends State<Home> {
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   ElevatedButton(
                       onPressed: () async {
-                        final List<int> _escPos = await _customEscPos();
+                        final List<int> escPos = await _customEscPos();
                         await SunmiTaskPrinter.initPrinter();
                         await SunmiTaskPrinter.startTransactionPrint(true);
-                        await SunmiTaskPrinter.printRawData(Uint8List.fromList(_escPos));
+                        await SunmiTaskPrinter.printRawData(Uint8List.fromList(escPos));
                         await SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: const Text('Custom ESC/POS to print')),
