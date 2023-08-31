@@ -1,5 +1,10 @@
 package dev.francescodema.sunmi_task_printer;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -13,6 +18,9 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.EventChannel;
+import io.flutter.plugin.common.EventChannel.EventSink;
+import io.flutter.plugin.common.EventChannel.StreamHandler;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -21,20 +29,31 @@ import io.flutter.plugin.common.MethodChannel.Result;
 /**
  * SunmiTaskPrinterPlugin
  */
-public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler {
+public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler, StreamHandler {
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
     /// when the Flutter Engine is detached from the Activity
-    private MethodChannel channel;
+    private MethodChannel methodChannel;
+    private EventChannel eventChannel;
+    private Context context;
     private SunmiTaskPrinterMethod sunmiTaskPrinterMethod;
+
+    private BroadcastReceiver printerServiceReceiver;
 
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "sunmi_task_printer");
-        sunmiTaskPrinterMethod = new SunmiTaskPrinterMethod(flutterPluginBinding.getApplicationContext());
-        channel.setMethodCallHandler(this);
+        context = flutterPluginBinding.getApplicationContext();
+        methodChannel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "sunmi_task_printer");
+        eventChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), "sunmi_task_printer_events");
+        eventChannel.setStreamHandler(this);
+
+        sunmiTaskPrinterMethod = new SunmiTaskPrinterMethod(context);
+
+        methodChannel.setMethodCallHandler(this);
+        sunmiTaskPrinterMethod.bindService();
+
     }
 
     /**
@@ -241,8 +260,72 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
         }
     }
 
+    /**
+     * On detached from engine.
+     *
+     * @param binding the binding
+     */
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        channel.setMethodCallHandler(null);
+        onCancel(null);
+        sunmiTaskPrinterMethod.unbindService();
+        context = null;
+        methodChannel.setMethodCallHandler(null);
+        methodChannel = null;
+        eventChannel.setStreamHandler(null);
+        eventChannel = null;
     }
+
+    /**
+     * On listen.
+     *
+     * @param arguments the arguments
+     * @param events    the events
+     */
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    @Override
+    public void onListen(Object arguments, EventSink events) {
+        printerServiceReceiver = createPrinterServiceReceiver(events);
+        context.registerReceiver(
+                printerServiceReceiver,
+                new IntentFilter("com.sunmi.extprinterservice.OUT_OF_PAPER_ACTION")
+        );
+    }
+
+    /**
+     * On cancel.
+     *
+     * @param arguments the arguments
+     */
+    @Override
+    public void onCancel(Object arguments) {
+        if (printerServiceReceiver != null) {
+            try {
+                context.unregisterReceiver(printerServiceReceiver);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            printerServiceReceiver = null;
+        }
+    }
+
+
+    /**
+     * Create scanner service receiver from event sink.
+     *
+     * @param events the event sink
+     * @return BroadcastReceiver
+     */
+    private BroadcastReceiver createPrinterServiceReceiver(final EventSink events) {
+        System.out.println("events = " + events);
+        return new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                System.out.println("intent = " + intent);
+                String data = intent.getStringExtra("data");
+                events.success(data);
+            }
+        };
+    }
+
 }

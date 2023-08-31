@@ -76,6 +76,10 @@ class _HomeState extends State<Home> {
         printBinded = isBind!;
       });
     });
+
+    SunmiTaskPrinter.onStatusUpdated().listen((event) {
+      debugPrint("Status: $event");
+    });
   }
 
   /// must binding ur printer at first init in app
@@ -433,7 +437,8 @@ class _HomeState extends State<Home> {
                         await SunmiTaskPrinter.bold();
                         await SunmiTaskPrinter.printText('Transaction\'s Qrcode');
                         await SunmiTaskPrinter.resetBold();
-                        await SunmiTaskPrinter.printQRCode('https://github.com/brasizza/sunmi_printer');
+                        await SunmiTaskPrinter.printQRCode(
+                            'https://github.com/brasizza/sunmi_printer');
                         await SunmiTaskPrinter.lineWrap(2);
                         await SunmiTaskPrinter.exitTransactionPrint(true);
                       },
@@ -473,7 +478,7 @@ class _HomeState extends State<Home> {
 Future<Uint8List> readFileBytes(String path) async {
   ByteData fileData = await rootBundle.load(path);
   Uint8List fileUnit8List =
-      fileData.buffer.asUint8List(fileData.offsetInBytes, fileData.lengthInBytes);
+  fileData.buffer.asUint8List(fileData.offsetInBytes, fileData.lengthInBytes);
   return fileUnit8List;
 }
 

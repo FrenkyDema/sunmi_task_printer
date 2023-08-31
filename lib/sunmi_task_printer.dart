@@ -37,6 +37,11 @@ class SunmiTaskPrinter {
   //A callable method to start the communication with the native code!
   static const MethodChannel _channel = MethodChannel('sunmi_task_printer');
 
+  ///*sunmi_scanner_events*
+  ///
+  //A callable event channel to start the communication with the native code!
+  static const EventChannel _eventChannel = EventChannel('sunmi_task_printer_events');
+
   Future<String?> getPlatformVersion() async {
     return await _channel.invokeMethod('getPlatformVersion');
   }
@@ -513,5 +518,16 @@ class SunmiTaskPrinter {
   /// aligns: The weight of the solid content of each line. Like flex.
   static Future<void> lcdMultiString(List<String> texts, List<int> aligns) async {
     return await _channel.invokeMethod("LCD_MULTI_STRING", {"text": texts, "align": aligns});
+  }
+
+  /// Stream for the event value
+  static Stream<String>? _onStatusUpdated;
+
+  /// Subscribe to this stream to receive barcode as string when it's scanned.
+  /// Make sure to cancel subscription when you're done.
+  static Stream<String> onStatusUpdated() {
+    _onStatusUpdated ??=
+        _eventChannel.receiveBroadcastStream().map((dynamic event) => event as String);
+    return _onStatusUpdated ?? const Stream<String>.empty();
   }
 }
