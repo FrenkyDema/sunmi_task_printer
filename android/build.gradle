@@ -36,10 +36,10 @@ android {
     buildFeatures {
         aidl = true
     }
-
     defaultConfig {
-        minSdkVersion 19
+        targetSdk 24
     }
+
 
     dependencies {
         testImplementation 'junit:junit:4.13.2'

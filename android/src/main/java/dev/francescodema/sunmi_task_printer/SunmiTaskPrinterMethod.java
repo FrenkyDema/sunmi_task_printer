@@ -24,7 +24,7 @@ public class SunmiTaskPrinterMethod {
 
     private final String TAG = SunmiTaskPrinterMethod.class.getSimpleName();
     private final ArrayList<Boolean> _printingText = new ArrayList<>();
-    private IWoyouService _woyouService;
+    private IWoyouService _printerService;
     private final Context _context;
 
     /**
@@ -40,8 +40,8 @@ public class SunmiTaskPrinterMethod {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             try {
-                _woyouService = IWoyouService.Stub.asInterface(service);
-                String serviceVersion = _woyouService.getServiceVersion();
+                _printerService = IWoyouService.Stub.asInterface(service);
+                String serviceVersion = _printerService.getServiceVersion();
                 Toast.makeText(_context, "Sunmi Printer Service Connected. Version :" + serviceVersion, Toast.LENGTH_LONG).show();
 
 
@@ -76,24 +76,48 @@ public class SunmiTaskPrinterMethod {
         _context.unbindService(connService);
     }
 
+
     /**
-     * Init printer.
+     * Init printer boolean.
+     *
+     * @return the outcome of the operation
      */
-    public void initPrinter() {
+    public boolean initPrinter() {
         try {
-            _woyouService.printerInit(this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.printerInit(this._callback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
+
     /**
-     * Update printer int.
+     * Get the latest status return value of the printer:
+     * <p>
+     * 1: Printer is normal
+     * <p>
+     * 2: Printer update status
+     * <p>
+     * 3: Get state abnormalities
+     * <p>
+     * 4: Lamdable paper
+     * <p>
+     * 5: overheated
+     * <p>
+     * 6: Open cover
+     * <p>
+     * 7: cut knife abnormal
+     * <p>
+     * 8: cut knife recovery
+     * <p>
+     * 505: The printer is not detected
      *
-     * @return the int
+     * @return the last status int
      */
     public int updatePrinter() {
         try {
-            return _woyouService.updatePrinterState();
+            return TaskProvider.runFunctionWithException(() -> _printerService.updatePrinterState()).orElse(0);
         } catch (RemoteException | NullPointerException e) {
             return 0;
         }
@@ -103,14 +127,11 @@ public class SunmiTaskPrinterMethod {
      * Print text.
      *
      * @param text the text
+     * @return the outcome of the operation
      */
-    public void printText(String text) {
-        this._printingText.add(this._printText(text));
-    }
-
-    private Boolean _printText(String text) {
+    Boolean printText(String text) {
         try {
-            _woyouService.printText(text, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.printText(text, this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
@@ -118,54 +139,38 @@ public class SunmiTaskPrinterMethod {
     }
 
     /**
-     * Sets alignment.
+     * Setting alignment mode, which has an impact on the post-printing,
+     * <p>
+     * unless the initialization alignment:
+     * <p>
+     * 0: to the left,
+     * <p>
+     * 1: center,
+     * <p>
+     * 2: to the right
      *
-     * @param alignment the alignment
-     * @return the alignment
+     * @param alignment the alignment int
+     * @return the outcome of the operation
      */
     public Boolean setAlignment(Integer alignment) {
         try {
-            _woyouService.setAlignment(alignment, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.setAlignment(alignment, this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
         }
     }
+
 
     /**
      * Sets font size.
      *
      * @param fontSize the font size
-     * @return the font size
+     * @return the outcome of the operation
      */
     public Boolean setFontSize(int fontSize) {
         try {
-            _woyouService.setFontSize(fontSize, this._callback());
-            return true;
-        } catch (RemoteException | NullPointerException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Sets font bold.
-     *
-     * @param bold the bold
-     * @return the font bold
-     */
-    public Boolean setFontBold(Boolean bold) {
-        if (bold == null) {
-            bold = false;
-        }
-
-        byte[] command = new byte[]{0x1B, 0x45, 0x1};
-
-        if (!bold) {
-            command = new byte[]{0x1B, 0x45, 0x0};
-        }
-
-        try {
-            _woyouService.sendRAWData(command, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.setFontSize(fontSize, this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
@@ -174,20 +179,16 @@ public class SunmiTaskPrinterMethod {
 
 
     /**
-     * Print column boolean.
+     * Print column.
      *
      * @param stringColumns   the string columns
      * @param columnWidth     the column width
      * @param columnAlignment the column alignment
-     * @return the boolean
+     * @return the outcome of the operation
      */
     public Boolean printColumn(String[] stringColumns, int[] columnWidth, int[] columnAlignment) {
-
-
         try {
-
-            _woyouService.printColumnsText(stringColumns, columnWidth, columnAlignment, this._callback());
-
+            TaskProvider.runFunctionWithException(() -> _printerService.printColumnsText(stringColumns, columnWidth, columnAlignment, this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
@@ -195,14 +196,14 @@ public class SunmiTaskPrinterMethod {
     }
 
     /**
-     * Print image boolean.
+     * Print image.
      *
      * @param bitmap the bitmap
-     * @return the boolean
+     * @return the outcome of the operation
      */
     public Boolean printImage(Bitmap bitmap) {
         try {
-            _woyouService.printBitmap(bitmap, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.printBitmap(bitmap, this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
@@ -213,11 +214,11 @@ public class SunmiTaskPrinterMethod {
     /**
      * Cut paper boolean.
      *
-     * @return the boolean
+     * @return the outcome of the operation
      */
     public Boolean cutPaper() {
         try {
-            _woyouService.cutPaper(this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.cutPaper(this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
@@ -225,44 +226,51 @@ public class SunmiTaskPrinterMethod {
     }
 
     /**
-     * Gets printer serial no.
+     * Get the printing machine board serial number.
      *
-     * @return the printer serial no
+     * @return the printer serial number, "DEFAULT" if is null, "NOT FOUND" if error
      */
-    public String getPrinterSerialNo() {
-
+    public String getPrinterSerialNumber() {
         try {
-            return _woyouService.getPrinterSerialNo();
-        } catch (RemoteException e) {
-            return "";
-        } catch (NullPointerException e) {
+            return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterSerialNo()).orElse("DEFAULT");
+        } catch (RemoteException | NullPointerException e) {
             return "NOT FOUND";
         }
     }
 
     /**
      * Gets printer version.
+     * <p>
+     * The desktop printer can switch the print paper type.
+     * <p>
+     * 0: 80mm
+     * <p>
+     * 1: 58mm
+     * <p>
+     * Support version: T1-V2.4.0 or above T2, S2-V1.0.5 or above.
      *
-     * @return the printer version
+     * @return the printer serial number, "DEFAULT" if is null, "NOT FOUND" if error
      */
     public String getPrinterVersion() {
         try {
-            return _woyouService.getPrinterVersion();
-        } catch (RemoteException e) {
-            return "";// error;
-        } catch (NullPointerException e) {
+            return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterVersion()).orElse("DEFAULT");
+        } catch (RemoteException | NullPointerException e) {
             return "NOT FOUND";
         }
     }
 
     /**
-     * Gets printer paper.
+     * Gets printer paper size.
+     * <p>
+     * 0: 80mm
+     * <p>
+     * 1: 58mm
      *
-     * @return the printer paper
+     * @return the printer paper size int
      */
-    public int getPrinterPaper() {
+    public int getPrinterPaperSize() {
         try {
-            return _woyouService.getPrinterPaper();
+            return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterPaper()).orElse(1);
         } catch (RemoteException e) {
             return 1; // error;
         } catch (NullPointerException e) {
@@ -271,13 +279,13 @@ public class SunmiTaskPrinterMethod {
     }
 
     /**
-     * Gets printer mode.
+     * Get the current printer mode.
      *
-     * @return the printer mode
+     * @return 0 common mode 1 black label mode, else 3
      */
     public int getPrinterMode() {
         try {
-            return _woyouService.getPrinterMode();
+            return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterMode()).orElse(3);
         } catch (RemoteException e) {
             return 3; // error;
         } catch (NullPointerException e) {
@@ -286,13 +294,13 @@ public class SunmiTaskPrinterMethod {
     }
 
     /**
-     * Open drawer boolean.
+     * Open the money cabinet.
      *
-     * @return the boolean
+     * @return the outcome of the operation
      */
     public Boolean openDrawer() {
         try {
-            _woyouService.openDrawer(this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.openDrawer(this._callback()));
             return true;
         } catch (RemoteException | NullPointerException e) {
             return false;
@@ -301,26 +309,26 @@ public class SunmiTaskPrinterMethod {
 
 
     /**
-     * Drawer status boolean.
+     * Drawer status.
      *
-     * @return the boolean
+     * @return is drawer connected: true, disconnected: false
      */
-    public Boolean drawerStatus() {
+    public Boolean drawerIsConnected() {
         try {
-            return _woyouService.getDrawerStatus();
+            return TaskProvider.runFunctionWithException(() -> _printerService.getDrawerStatus()).orElse(false);
         } catch (RemoteException | NullPointerException e) {
             return false;
         }
     }
 
     /**
-     * Times opened int.
+     * Cumulative number of times the money cabinet is opened.
      *
-     * @return the int
+     * @return int open number of times
      */
     public int timesOpened() {
         try {
-            return _woyouService.getOpenDrawerTimes();
+            return TaskProvider.runFunctionWithException(() -> _printerService.getOpenDrawerTimes()).orElse(0);
         } catch (RemoteException | NullPointerException e) {
             return 0;
         }
@@ -329,84 +337,92 @@ public class SunmiTaskPrinterMethod {
     /**
      * Line wrap.
      *
-     * @param lines the lines
+     * @param lines the number of paper line
+     * @return the outcome of the operation
      */
-    public void lineWrap(int lines) {
+    public boolean lineWrap(int lines) {
         try {
-            _woyouService.lineWrap(lines, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.lineWrap(lines, this._callback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
     /**
-     * Send raw.
+     * Send raw data.
      *
-     * @param bytes the bytes
+     * @param bytes the bytes to send
+     * @return the outcome of the operation
      */
-    public void sendRaw(byte[] bytes) {
+    public boolean sendRaw(byte[] bytes) {
         try {
-            this._woyouService.sendRAWData(bytes, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.sendRAWData(bytes, this._callback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
     /**
-     * Enter printer buffer.
-     *
-     * @param clear the clear
-     */
-    public void enterPrinterBuffer(Boolean clear) {
-        try {
-            this._woyouService.enterPrinterBuffer(clear);
-        } catch (RemoteException | NullPointerException ignored) {
-        }
-    }
-
-    /**
-     * Commit printer buffer.
-     */
-    public void commitPrinterBuffer() {
-        try {
-            this._woyouService.commitPrinterBuffer();
-        } catch (RemoteException | NullPointerException ignored) {
-        }
-    }
-
-    /**
-     * Exit printer buffer.
+     * Entering the transaction mode, all printing calls will cache.
      *
      * @param clear the clear
+     * @return the outcome of the operation
      */
-    public void exitPrinterBuffer(Boolean clear) {
+    public boolean enterPrinterBuffer(Boolean clear) {
         try {
-            this._woyouService.exitPrinterBuffer(clear);
+            TaskProvider.runFunctionWithException(() -> _printerService.enterPrinterBuffer(clear));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
     /**
-     * Sets alignment.
+     * Printing buffer content.
      *
-     * @param alignment the alignment
+     * @return the outcome of the operation
      */
-    public void setAlignment(int alignment) {
+    public boolean commitPrinterBuffer() {
         try {
-            _woyouService.setAlignment(alignment, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.commitPrinterBuffer());
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
+
+    /**
+     * Exit buffer mode.
+     *
+     * @param clear whether to print the buffer content
+     * @return the outcome of the operation
+     */
+    public boolean exitPrinterBuffer(Boolean clear) {
+        try {
+            TaskProvider.runFunctionWithException(() -> _printerService.exitPrinterBuffer(clear));
+            return true;
+        } catch (RemoteException | NullPointerException ignored) {
+            return false;
+        }
+    }
+
 
     /**
      * Print qr code.
      *
      * @param data       the data
-     * @param modulesize the modulesize
-     * @param errorlevel the errorlevel
+     * @param moduleSize the moduleSize
+     * @param errorLevel the errorLevel
+     * @return the outcome of the operation
      */
-    public void printQRCode(String data, int modulesize, int errorlevel) {
+    public boolean printQRCode(String data, int moduleSize, int errorLevel) {
         try {
-            _woyouService.printQRCode(data, modulesize, errorlevel, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.printQRCode(data, moduleSize, errorLevel, this._callback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -418,11 +434,14 @@ public class SunmiTaskPrinterMethod {
      * @param textPosition the text position
      * @param width        the width
      * @param height       the height
+     * @return the outcome of the operation
      */
-    public void printBarCode(String data, int barcodeType, int textPosition, int width, int height) {
+    public boolean printBarCode(String data, int barcodeType, int textPosition, int width, int height) {
         try {
-            _woyouService.printBarCode(data, barcodeType, height, width, textPosition, this._callback());
+            TaskProvider.runFunctionWithException(() -> _printerService.printBarCode(data, barcodeType, height, width, textPosition, this._callback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -457,11 +476,14 @@ public class SunmiTaskPrinterMethod {
      * Send lcd command.
      *
      * @param flag the flag
+     * @return the outcome of the operation
      */
-    public void sendLCDCommand(int flag) {
+    public boolean sendLCDCommand(int flag) {
         try {
-            _woyouService.sendLCDCommand(flag);
+            TaskProvider.runFunctionWithException(() -> _printerService.sendLCDCommand(flag));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -469,11 +491,14 @@ public class SunmiTaskPrinterMethod {
      * Send lcd string.
      *
      * @param string the string
+     * @return the outcome of the operation
      */
-    public void sendLCDString(String string) {
+    public boolean sendLCDString(String string) {
         try {
-            _woyouService.sendLCDString(string, this._lcdCallback());
+            TaskProvider.runFunctionWithException(() -> _printerService.sendLCDString(string, this._lcdCallback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -481,11 +506,14 @@ public class SunmiTaskPrinterMethod {
      * Send lcd bitmap.
      *
      * @param bitmap the bitmap
+     * @return the outcome of the operation
      */
-    public void sendLCDBitmap(android.graphics.Bitmap bitmap) {
+    public boolean sendLCDBitmap(android.graphics.Bitmap bitmap) {
         try {
-            _woyouService.sendLCDBitmap(bitmap, this._lcdCallback());
+            TaskProvider.runFunctionWithException(() -> _printerService.sendLCDBitmap(bitmap, this._lcdCallback()));
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -494,11 +522,14 @@ public class SunmiTaskPrinterMethod {
      *
      * @param topText    the top text
      * @param bottomText the bottom text
+     * @return the outcome of the operation
      */
-    public void sendLCDDoubleString(String topText, String bottomText) {
+    public boolean sendLCDDoubleString(String topText, String bottomText) {
         try {
-            _woyouService.sendLCDDoubleString(topText, bottomText, this._lcdCallback());
+            _printerService.sendLCDDoubleString(topText, bottomText, this._lcdCallback());
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -508,11 +539,14 @@ public class SunmiTaskPrinterMethod {
      * @param string the string
      * @param size   the size
      * @param fill   the fill
+     * @return the outcome of the operation
      */
-    public void sendLCDFillString(String string, int size, boolean fill) {
+    public boolean sendLCDFillString(String string, int size, boolean fill) {
         try {
-            _woyouService.sendLCDFillString(string, size, fill, this._lcdCallback());
+            _printerService.sendLCDFillString(string, size, fill, this._lcdCallback());
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -521,11 +555,14 @@ public class SunmiTaskPrinterMethod {
      *
      * @param text  Text lines.
      * @param align The weight of the solid content of each line. Like flex.
+     * @return the outcome of the operation
      */
-    public void sendLCDMultiString(String[] text, int[] align) {
+    public boolean sendLCDMultiString(String[] text, int[] align) {
         try {
-            _woyouService.sendLCDMultiString(text, align, this._lcdCallback());
+            _printerService.sendLCDMultiString(text, align, this._lcdCallback());
+            return true;
         } catch (RemoteException | NullPointerException ignored) {
+            return false;
         }
     }
 
@@ -537,7 +574,7 @@ public class SunmiTaskPrinterMethod {
             }
 
             @Override
-            public void onRunResult(boolean show) throws RemoteException {
+            public void onRunResult(boolean show) {
             }
         };
     }

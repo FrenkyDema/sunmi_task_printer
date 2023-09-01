@@ -1,4 +1,8 @@
 buildscript {
+    ext {
+        agp_version = '8.1.1'
+        agp_version1 = '8.1.1'
+    }
     ext.kotlin_version = '1.7.10'
     repositories {
         google()
@@ -6,9 +10,14 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.1'
+        classpath "com.android.tools.build:gradle:$agp_version1"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
+}
+
+ext {
+    targetCompatibility = JavaVersion.VERSION_14
+    targetCompatibility1 = targetCompatibility
 }
 
 allprojects {

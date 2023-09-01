@@ -54,11 +54,7 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                     sunmiTaskPrinterMethod.unbindService();
                     result.success(true);
                 }
-                case "INIT_PRINTER" -> {
-                    // ICallback callback = call.argument("callback");
-                    sunmiTaskPrinterMethod.initPrinter();
-                    result.success(true);
-                }
+                case "INIT_PRINTER" -> result.success(sunmiTaskPrinterMethod.initPrinter());
                 case "GET_UPDATE_PRINTER" -> {
                     final int status_code = sunmiTaskPrinterMethod.updatePrinter();
                     String status_msg = switch (status_code) {
@@ -80,48 +76,24 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                     // response printer status
                     result.success(status_msg);
                 }
-                case "PRINT_TEXT" -> {
-                    String text = call.argument("text");
-                    sunmiTaskPrinterMethod.printText(text);
-                    result.success(true);
-                }
-                case "RAW_DATA" -> {
-                    sunmiTaskPrinterMethod.sendRaw(call.argument("data"));
-                    result.success(true);
-                }
-                case "PRINT_QRCODE" -> {
-                    String data = call.argument("data");
-                    int moduleSize = call.argument("modulesize");
-                    int errorLevel = call.argument("errorlevel");
-                    sunmiTaskPrinterMethod.printQRCode(data, moduleSize, errorLevel);
-                    result.success(true);
-                }
+                case "PRINT_TEXT" ->
+                        result.success(sunmiTaskPrinterMethod.printText(call.argument("text")));
+                case "RAW_DATA" ->
+                        result.success(sunmiTaskPrinterMethod.sendRaw(call.argument("data")));
+                case "PRINT_QRCODE" ->
+                        result.success(sunmiTaskPrinterMethod.printQRCode(call.argument("data"), call.argument("modulesize"), call.argument("errorlevel")));
                 case "PRINT_BARCODE" -> {
-                    String barCodeData = call.argument("data");
-                    int barcodeType = call.argument("barcodeType");
-                    int textPosition = call.argument("textPosition");
-                    int width = call.argument("width");
-                    int height = call.argument("height");
-                    sunmiTaskPrinterMethod.printBarCode(barCodeData, barcodeType, textPosition, width, height);
+                    result.success(sunmiTaskPrinterMethod.printBarCode(call.argument("data"), call.argument("barcodeType"), call.argument("textPosition"), call.argument("width"), call.argument("height")));
                     sunmiTaskPrinterMethod.lineWrap(1);
-                    result.success(true);
                 }
                 // void printBarCode(String data, int symbology, int height, int width, int textposition,  in ICallback callback);
 
-                case "LINE_WRAP" -> {
-                    int lines = call.argument("lines");
-                    sunmiTaskPrinterMethod.lineWrap(lines);
-                    result.success(true);
-                }
-                case "FONT_SIZE" -> {
-                    int fontSize = call.argument("size");
-                    result.success(sunmiTaskPrinterMethod.setFontSize(fontSize));
-                }
-                case "SET_ALIGNMENT" -> {
-                    int alignment = call.argument("alignment");
-                    sunmiTaskPrinterMethod.setAlignment(alignment);
-                    result.success(true);
-                }
+                case "LINE_WRAP" ->
+                        result.success(sunmiTaskPrinterMethod.lineWrap(call.argument("lines")));
+                case "FONT_SIZE" ->
+                        result.success(sunmiTaskPrinterMethod.setFontSize(call.argument("size")));
+                case "SET_ALIGNMENT" ->
+                        result.success(sunmiTaskPrinterMethod.setAlignment(call.argument("alignment")));
                 case "PRINT_IMAGE" -> {
                     byte[] bytes = call.argument("bitmap");
                     assert bytes != null;
@@ -137,23 +109,16 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                         case 3 -> "ERROR";
                         default -> "EXCEPTION";
                     };
-
-                    // response printer status
                     result.success(mode_desc);
                 }
-                case "ENTER_PRINTER_BUFFER" -> {
-                    Boolean clearEnter = call.argument("clearEnter");
-                    sunmiTaskPrinterMethod.enterPrinterBuffer(clearEnter);
-                    result.success(true);
-                }
-                case "COMMIT_PRINTER_BUFFER" -> {
-                    sunmiTaskPrinterMethod.commitPrinterBuffer();
-                    result.success(true);
-                }
+                case "ENTER_PRINTER_BUFFER" ->
+                        result.success(sunmiTaskPrinterMethod.enterPrinterBuffer(call.argument("clearEnter")));
+                case "COMMIT_PRINTER_BUFFER" ->
+                        result.success(sunmiTaskPrinterMethod.commitPrinterBuffer());
                 case "CUT_PAPER" -> result.success(sunmiTaskPrinterMethod.cutPaper());
                 case "OPEN_DRAWER" -> result.success(sunmiTaskPrinterMethod.openDrawer());
                 case "DRAWER_OPENED" -> result.success(sunmiTaskPrinterMethod.timesOpened());
-                case "DRAWER_STATUS" -> result.success(sunmiTaskPrinterMethod.drawerStatus());
+                case "DRAWER_STATUS" -> result.success(sunmiTaskPrinterMethod.drawerIsConnected());
                 case "PRINT_ROW" -> {
                     String colsStr = call.argument("cols");
                     try {
@@ -176,54 +141,28 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                         Log.d("SunmiPrinter", Objects.requireNonNull(err.getMessage()));
                     }
                 }
-                case "EXIT_PRINTER_BUFFER" -> {
-                    Boolean clearExit = call.argument("clearExit");
-                    sunmiTaskPrinterMethod.exitPrinterBuffer(clearExit);
-                    result.success(true);
-                }
-                case "PRINTER_SERIAL_NUMBER" -> {
-                    final String serial = sunmiTaskPrinterMethod.getPrinterSerialNo();
-                    result.success(serial);
-                }
-                case "PRINTER_VERSION" -> {
-                    final String printer_version = sunmiTaskPrinterMethod.getPrinterVersion();
-                    result.success(printer_version);
-                }
-                case "PAPER_SIZE" -> {
-                    final int paper = sunmiTaskPrinterMethod.getPrinterPaper();
-                    result.success(paper);
-                }
-
+                case "EXIT_PRINTER_BUFFER" ->
+                        result.success(sunmiTaskPrinterMethod.exitPrinterBuffer(call.argument("clearExit")));
+                case "PRINTER_SERIAL_NUMBER" ->
+                        result.success(sunmiTaskPrinterMethod.getPrinterSerialNumber());
+                case "PRINTER_VERSION" ->
+                        result.success(sunmiTaskPrinterMethod.getPrinterVersion());
+                case "PAPER_SIZE" -> result.success(sunmiTaskPrinterMethod.getPrinterPaperSize());
                 // LCD METHODS
-                case "LCD_COMMAND" -> {
-                    int flag = call.argument("flag");
-                    sunmiTaskPrinterMethod.sendLCDCommand(flag);
-                    result.success(true);
-                }
-                case "LCD_STRING" -> {
-                    String lcdString = call.argument("string");
-                    sunmiTaskPrinterMethod.sendLCDString(lcdString);
-                    result.success(true);
-                }
+                case "LCD_COMMAND" ->
+                        result.success(sunmiTaskPrinterMethod.sendLCDCommand(call.argument("flag")));
+                case "LCD_STRING" ->
+                        result.success(sunmiTaskPrinterMethod.sendLCDString(call.argument("string")));
                 case "LCD_BITMAP" -> {
                     byte[] lcdBitmapData = call.argument("bitmap");
                     Bitmap lcdBitmap = BitmapFactory.decodeByteArray(lcdBitmapData, 0, lcdBitmapData.length);
                     sunmiTaskPrinterMethod.sendLCDBitmap(lcdBitmap);
                     result.success(true);
                 }
-                case "LCD_DOUBLE_STRING" -> {
-                    String topText = call.argument("topText");
-                    String bottomText = call.argument("bottomText");
-                    sunmiTaskPrinterMethod.sendLCDDoubleString(topText, bottomText);
-                    result.success(true);
-                }
-                case "LCD_FILL_STRING" -> {
-                    String lcdFillString = call.argument("string");
-                    int lcdFillSize = call.argument("size");
-                    boolean lcdFill = call.argument("fill");
-                    sunmiTaskPrinterMethod.sendLCDFillString(lcdFillString, lcdFillSize, lcdFill);
-                    result.success(true);
-                }
+                case "LCD_DOUBLE_STRING" ->
+                        result.success(sunmiTaskPrinterMethod.sendLCDDoubleString(call.argument("topText"), call.argument("bottomText")));
+                case "LCD_FILL_STRING" ->
+                        result.success(sunmiTaskPrinterMethod.sendLCDFillString(call.argument("string"), call.argument("size"), call.argument("fill")));
                 case "LCD_MULTI_STRING" -> {
                     ArrayList<String> lcdTextAL = call.argument("text");
                     assert lcdTextAL != null;
@@ -231,8 +170,7 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                     ArrayList<Integer> lcdAlignAL = call.argument("align");
                     assert lcdAlignAL != null;
                     int[] lcdAlign = Utilities.arrayListToIntList(lcdAlignAL);
-                    sunmiTaskPrinterMethod.sendLCDMultiString(lcdText, lcdAlign);
-                    result.success(true);
+                    result.success(sunmiTaskPrinterMethod.sendLCDMultiString(lcdText, lcdAlign));
                 }
                 default -> result.notImplemented();
             }

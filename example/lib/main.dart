@@ -118,39 +118,40 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printQRCode(
-                              'https://github.com/brasizza/sunmi_printer');
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printQRCode('https://github.com/brasizza/sunmi_printer');
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Print qrCode')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printBarCode('1234567890',
-                              barcodeType: SunmiBarcodeType.CODE128,
-                              textPosition: SunmiBarcodeTextPos.TEXT_UNDER,
-                              height: 20);
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printBarCode(
+                            '1234567890',
+                            barcodeType: SunmiBarcodeType.CODE128,
+                            textPosition: SunmiBarcodeTextPos.TEXT_UNDER,
+                            height: 20,
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Print barCode')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.line();
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.line();
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Print line')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.lineWrap(2);
+                        onPressed: () {
+                          SunmiTaskPrinter.lineWrap(2);
                         },
                         child: const Text('Wrap line')),
                   ],
@@ -162,77 +163,84 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printText('Hello I\'m bold',
-                              style: SunmiStyle(bold: true));
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printText(
+                            'Hello I\'m bold',
+                            style: SunmiStyle(bold: true),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Bold Text')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printText('Very small!',
-                              style: SunmiStyle(fontSize: SunmiFontSize.XS));
-                          await SunmiTaskPrinter.lineWrap(2);
-
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printText(
+                            'Very small!',
+                            style: SunmiStyle(fontSize: SunmiFontSize.XS),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Very small font')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printText('Very small!',
-                              style: SunmiStyle(fontSize: SunmiFontSize.SM));
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printText(
+                            'Very small!',
+                            style: SunmiStyle(fontSize: SunmiFontSize.SM),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Small font')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printText('Normal font',
-                              style: SunmiStyle(fontSize: SunmiFontSize.MD));
-
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printText(
+                            'Normal font',
+                            style: SunmiStyle(fontSize: SunmiFontSize.MD),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Normal font')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.printText('Large font',
-                              style: SunmiStyle(fontSize: SunmiFontSize.LG));
-
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.printText(
+                            'Large font',
+                            style: SunmiStyle(fontSize: SunmiFontSize.LG),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Large font')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.setFontSize(SunmiFontSize.XL);
-                          await SunmiTaskPrinter.printText('Very Large font!');
-                          await SunmiTaskPrinter.resetFontSize();
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.setFontSize(SunmiFontSize.XL);
+                          SunmiTaskPrinter.printText('Very Large font!');
+                          SunmiTaskPrinter.resetFontSize();
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Very large font')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.setCustomFontSize(13);
-                          await SunmiTaskPrinter.printText('Very Large font!');
-                          await SunmiTaskPrinter.resetFontSize();
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.setCustomFontSize(13);
+                          SunmiTaskPrinter.printText('Very Large font!');
+                          SunmiTaskPrinter.resetFontSize();
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Custom size font')),
                   ],
@@ -244,42 +252,42 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printText('Align right',
-                              style: SunmiStyle(align: SunmiPrintAlign.RIGHT));
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printText(
+                            'Align right',
+                            style: SunmiStyle(align: SunmiPrintAlign.RIGHT),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Align right')),
                     ElevatedButton(
-                        onPressed: () async {
-                          await SunmiTaskPrinter.initPrinter();
-
-                          await SunmiTaskPrinter.startTransactionPrint(true);
-                          await SunmiTaskPrinter.printText('Align left',
-                              style: SunmiStyle(align: SunmiPrintAlign.LEFT));
-
-                          await SunmiTaskPrinter.lineWrap(2);
-                          await SunmiTaskPrinter.exitTransactionPrint(true);
+                        onPressed: () {
+                          SunmiTaskPrinter.initPrinter();
+                          SunmiTaskPrinter.startTransactionPrint(true);
+                          SunmiTaskPrinter.printText(
+                            'Align left',
+                            style: SunmiStyle(align: SunmiPrintAlign.LEFT),
+                          );
+                          SunmiTaskPrinter.lineWrap(2);
+                          SunmiTaskPrinter.exitTransactionPrint(true);
                         },
                         child: const Text('Align left')),
                     ElevatedButton(
-                      onPressed: () async {
-                        await SunmiTaskPrinter.initPrinter();
-
-                        await SunmiTaskPrinter.startTransactionPrint(true);
-                        await SunmiTaskPrinter.printText(
+                      onPressed: () {
+                        SunmiTaskPrinter.initPrinter();
+                        SunmiTaskPrinter.startTransactionPrint(true);
+                        SunmiTaskPrinter.printText(
                           'Align center/ LARGE TEXT AND BOLD',
                           style: SunmiStyle(
                               align: SunmiPrintAlign.CENTER,
                               bold: true,
                               fontSize: SunmiFontSize.LG),
                         );
-
-                        await SunmiTaskPrinter.lineWrap(2);
-                        await SunmiTaskPrinter.exitTransactionPrint(true);
+                        SunmiTaskPrinter.lineWrap(2);
+                        SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: const Text('Align center'),
                     ),
@@ -292,16 +300,14 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     GestureDetector(
-                      onTap: () async {
-                        await SunmiTaskPrinter.initPrinter();
-
+                      onTap: ()  async {
+                        SunmiTaskPrinter.initPrinter();
                         Uint8List byte = await _getImageFromAsset('assets/images/dash.jpeg');
-                        await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-
-                        await SunmiTaskPrinter.startTransactionPrint(true);
-                        await SunmiTaskPrinter.printImage(byte);
-                        await SunmiTaskPrinter.lineWrap(2);
-                        await SunmiTaskPrinter.exitTransactionPrint(true);
+                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
+                        SunmiTaskPrinter.startTransactionPrint(true);
+                        SunmiTaskPrinter.printImage(byte);
+                        SunmiTaskPrinter.lineWrap(2);
+                        SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: Column(
                         children: [
@@ -322,11 +328,11 @@ class _HomeState extends State<Home> {
                         Uint8List byte = (await NetworkAssetBundle(Uri.parse(url)).load(url))
                             .buffer
                             .asUint8List();
-                        await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        await SunmiTaskPrinter.startTransactionPrint(true);
-                        await SunmiTaskPrinter.printImage(byte);
-                        await SunmiTaskPrinter.lineWrap(2);
-                        await SunmiTaskPrinter.exitTransactionPrint(true);
+                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
+                        SunmiTaskPrinter.startTransactionPrint(true);
+                        SunmiTaskPrinter.printImage(byte);
+                        SunmiTaskPrinter.lineWrap(2);
+                        SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: Column(
                         children: [
@@ -354,88 +360,88 @@ class _HomeState extends State<Home> {
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   ElevatedButton(
                       onPressed: () async {
-                        await SunmiTaskPrinter.initPrinter();
+                        SunmiTaskPrinter.initPrinter();
+                        SunmiTaskPrinter.startTransactionPrint(true);
+                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
+                        SunmiTaskPrinter.line();
+                        SunmiTaskPrinter.printText('Payment receipt');
+                        SunmiTaskPrinter.printText('Using the old way to bold!');
+                        SunmiTaskPrinter.line();
 
-                        await SunmiTaskPrinter.startTransactionPrint(true);
-                        await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        await SunmiTaskPrinter.line();
-                        await SunmiTaskPrinter.printText('Payment receipt');
-                        await SunmiTaskPrinter.printText('Using the old way to bold!');
-                        await SunmiTaskPrinter.line();
-
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'Name', width: 12, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: 'Qty', width: 6, align: SunmiPrintAlign.CENTER),
                           ColumnMaker(text: 'UN', width: 6, align: SunmiPrintAlign.RIGHT),
                           ColumnMaker(text: 'TOT', width: 6, align: SunmiPrintAlign.RIGHT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'Fries', width: 12, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: '4x', width: 6, align: SunmiPrintAlign.CENTER),
                           ColumnMaker(text: '3.00', width: 6, align: SunmiPrintAlign.RIGHT),
                           ColumnMaker(text: '12.00', width: 6, align: SunmiPrintAlign.RIGHT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'Strawberry', width: 12, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: '1x', width: 6, align: SunmiPrintAlign.CENTER),
                           ColumnMaker(text: '24.44', width: 6, align: SunmiPrintAlign.RIGHT),
                           ColumnMaker(text: '24.44', width: 6, align: SunmiPrintAlign.RIGHT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'Soda', width: 12, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: '1x', width: 6, align: SunmiPrintAlign.CENTER),
                           ColumnMaker(text: '1.99', width: 6, align: SunmiPrintAlign.RIGHT),
                           ColumnMaker(text: '1.99', width: 6, align: SunmiPrintAlign.RIGHT),
                         ]);
 
-                        await SunmiTaskPrinter.line();
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.line();
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'TOTAL', width: 25, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: '38.43', width: 5, align: SunmiPrintAlign.RIGHT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'ARABIC TEXT', width: 15, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: 'اسم المشترك', width: 15, align: SunmiPrintAlign.LEFT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'اسم المشترك', width: 15, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: 'اسم المشترك', width: 15, align: SunmiPrintAlign.LEFT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'RUSSIAN TEXT', width: 15, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(
                               text: 'Санкт-Петербу́рг', width: 15, align: SunmiPrintAlign.LEFT),
                         ]);
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(
                               text: 'Санкт-Петербу́рг', width: 15, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(
                               text: 'Санкт-Петербу́рг', width: 15, align: SunmiPrintAlign.LEFT),
                         ]);
 
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: 'CHINESE TEXT', width: 15, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: '風俗通義', width: 15, align: SunmiPrintAlign.LEFT),
                         ]);
-                        await SunmiTaskPrinter.printRow(cols: [
+                        SunmiTaskPrinter.printRow(cols: [
                           ColumnMaker(text: '風俗通義', width: 15, align: SunmiPrintAlign.LEFT),
                           ColumnMaker(text: '風俗通義', width: 15, align: SunmiPrintAlign.LEFT),
                         ]);
 
-                        await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        await SunmiTaskPrinter.line();
-                        await SunmiTaskPrinter.bold();
-                        await SunmiTaskPrinter.printText('Transaction\'s Qrcode');
-                        await SunmiTaskPrinter.resetBold();
-                        await SunmiTaskPrinter.printQRCode('https://github.com/brasizza/sunmi_printer');
-                        await SunmiTaskPrinter.lineWrap(2);
-                        await SunmiTaskPrinter.exitTransactionPrint(true);
+                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
+                        SunmiTaskPrinter.line();
+                        SunmiTaskPrinter.bold();
+                        SunmiTaskPrinter.printText('Transaction\'s Qrcode');
+                        SunmiTaskPrinter.resetBold();
+                        SunmiTaskPrinter.printQRCode(
+                            'https://github.com/brasizza/sunmi_printer');
+                        SunmiTaskPrinter.lineWrap(2);
+                        SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: const Text('TICKET EXAMPLE')),
                 ]),
@@ -446,10 +452,10 @@ class _HomeState extends State<Home> {
                   ElevatedButton(
                       onPressed: () async {
                         final List<int> escPos = await _customEscPos();
-                        await SunmiTaskPrinter.initPrinter();
-                        await SunmiTaskPrinter.startTransactionPrint(true);
-                        await SunmiTaskPrinter.printRawData(Uint8List.fromList(escPos));
-                        await SunmiTaskPrinter.exitTransactionPrint(true);
+                        SunmiTaskPrinter.initPrinter();
+                        SunmiTaskPrinter.startTransactionPrint(true);
+                        SunmiTaskPrinter.printRawData(Uint8List.fromList(escPos));
+                        SunmiTaskPrinter.exitTransactionPrint(true);
                       },
                       child: const Text('Custom ESC/POS to print')),
                 ]),
@@ -458,8 +464,8 @@ class _HomeState extends State<Home> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   ElevatedButton(
-                      onPressed: () async {
-                        await SunmiTaskPrinter.openDrawer();
+                      onPressed: () {
+                        SunmiTaskPrinter.openDrawer();
                       },
                       child: const Text('Open Drawer')),
                 ]),
