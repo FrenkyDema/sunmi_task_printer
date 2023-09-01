@@ -12,7 +12,8 @@ class MockSunmiTaskPrinterPlatform
 }
 
 void main() {
-  final SunmiTaskPrinterPlatform initialPlatform = SunmiTaskPrinterPlatform.instance;
+  final SunmiTaskPrinterPlatform initialPlatform =
+      SunmiTaskPrinterPlatform.instance;
 
   test('$MethodChannelSunmiTaskPrinter is the default instance', () {
     expect(initialPlatform, isInstanceOf<MethodChannelSunmiTaskPrinter>());

@@ -1,6 +1,6 @@
 name: sunmi_task_printer
-description: Package to manage the Sunmi printer and its drivers
-version: 0.0.2
+description: A comprehensive software package to effectively manage Sunmi printers and their drivers, ensuring seamless printing operations.
+version: 0.0.3
 homepage: "https://github.com/FrenkyDema/sunmi_task_printer"
 
 environment:

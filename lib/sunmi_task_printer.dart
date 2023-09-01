@@ -165,7 +165,9 @@ class SunmiTaskPrinter {
   static Future<void> printRow({required List<ColumnMaker> cols}) async {
     final jsonCols = List<Map<String, String>>.from(
         cols.map<Map<String, String>>((ColumnMaker col) => col.toJson()));
-    Map<String, dynamic> arguments = <String, dynamic>{"cols": json.encode(jsonCols)};
+    Map<String, dynamic> arguments = <String, dynamic>{
+      "cols": json.encode(jsonCols)
+    };
     await _channel.invokeMethod("PRINT_ROW", arguments);
   }
 
@@ -182,7 +184,8 @@ class SunmiTaskPrinter {
   ///
   ///With this method you can print a qrcode with some errorLevel and size.
   static Future<void> printQRCode(String data,
-      {int size = 5, SunmiQrcodeLevel errorLevel = SunmiQrcodeLevel.LEVEL_H}) async {
+      {int size = 5,
+      SunmiQrcodeLevel errorLevel = SunmiQrcodeLevel.LEVEL_H}) async {
     int errorCode = 3;
     switch (errorLevel) {
       case SunmiQrcodeLevel.LEVEL_L:
@@ -213,7 +216,8 @@ class SunmiTaskPrinter {
       {SunmiBarcodeType barcodeType = SunmiBarcodeType.CODE128,
       int height = 162,
       int width = 2,
-      SunmiBarcodeTextPos textPosition = SunmiBarcodeTextPos.TEXT_ABOVE}) async {
+      SunmiBarcodeTextPos textPosition =
+          SunmiBarcodeTextPos.TEXT_ABOVE}) async {
     int codeType = 8;
     int textPosition0 = 8;
     switch (barcodeType) {
@@ -495,8 +499,8 @@ class SunmiTaskPrinter {
 
   /// Display 2 lines string on LCD
   static Future<void> lcdDoubleString(String topText, String bottomText) async {
-    return await _channel
-        .invokeMethod("LCD_DOUBLE_STRING", {"topText": topText, "bottomText": bottomText});
+    return await _channel.invokeMethod(
+        "LCD_DOUBLE_STRING", {"topText": topText, "bottomText": bottomText});
   }
 
   /// Send a single-line text in a customized size.
@@ -504,14 +508,17 @@ class SunmiTaskPrinter {
   /// e.g. size:16, fill:false ... Half size char ( Like lcdDoubleString() )
   ///      size:32, fill:false ... Full size char ( Like lcdString() )
   ///      size:64, fill:true ... Width 64 pixel huge character.
-  static Future<void> lcdFillString(String text, {int size = 32, bool fill = false}) async {
-    return await _channel
-        .invokeMethod("LCD_FILL_STRING", {"string": text, "size": size, "fill": fill});
+  static Future<void> lcdFillString(String text,
+      {int size = 32, bool fill = false}) async {
+    return await _channel.invokeMethod(
+        "LCD_FILL_STRING", {"string": text, "size": size, "fill": fill});
   }
 
   /// Display variable height multiline string.
   /// aligns: The weight of the solid content of each line. Like flex.
-  static Future<void> lcdMultiString(List<String> texts, List<int> aligns) async {
-    return await _channel.invokeMethod("LCD_MULTI_STRING", {"text": texts, "align": aligns});
+  static Future<void> lcdMultiString(
+      List<String> texts, List<int> aligns) async {
+    return await _channel
+        .invokeMethod("LCD_MULTI_STRING", {"text": texts, "align": aligns});
   }
 }

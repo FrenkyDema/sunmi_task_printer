@@ -1,3 +1,7 @@
+## 0.0.3
+
+* Refactoring for matching Dart formatter.
+
 ## 0.0.2
 
 * Refactoring
