@@ -59,21 +59,16 @@ well_
 
 ```dart
 // import packages
-import 'package:sunmi_printer_plus/sunmi_printer_plus.dart';
-
+import 'package:sunmi_task_printer/sunmi_task_printer.dart';
 
 // all method from sunmi printer need to async await
-await
-SunmiPrinter.bindingPrinter
-(); // must bind the printer first. for more example.. pls refer to example tab.
-
+await SunmiPrinter.bindingPrinter(); // must bind the printer first. for more example.. pls refer to example tab.
 ```
 
 ## Example code when use for transaction printing
 
 ```dart
-  await
-SunmiPrinter.startTransactionPrint(true);
+await SunmiPrinter.startTransactionPrint(true);
 
 await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT); // Right align
 await SunmiPrinter.printText('Align right');
@@ -94,13 +89,12 @@ await SunmiPrinter.setCustomFontSize(12); // SET CUSTOM FONT 12
 await SunmiPrinter.printText('Custom font size!!!');
 await SunmiPrinter.resetFontSize(); // Reset font to medium size
 
-await SunmiPrinter.printQRCode('https://github.com/brasizza/sunmi_printer'); // PRINT A QRCODE
+await SunmiPrinter.printQRCode('https://github.com/FrenkyDema/sunmi_task_printer'); // PRINT A QRCODE
 await SunmiPrinter.submitTransactionPrint(); // SUBMIT and cut paper
 await SunmiPrinter.exitTransactionPrint(true); // Close the transaction
-
 ```
 
-# Example code for LCD functions  [@ytyng](https://github.com/ytyng)
+# Example code for LCD functions
 
 ```dart
 await SunmiPrinter.lcdInitialize(); //Initialize the LCD 
@@ -114,16 +108,14 @@ byte = await readFileBytes('assets/images/128x40.png');
 await SunmiPrinter.lcdImage(byte); // Put an image in LCD 
 await SunmiPrinter.lcdFillString('abcDEFgj0123\$&=+', size: 16, fill: true); // Print a string and fill with zeros until the size is reached 
 await SunmiPrinter.lcdMultiString([ 'Welcome to flutter.', 'Align 2.',], [ 1, 2, ] ); // Write multiple lines with alignment
-
 ```
 
-# Example to open the cashier  [@ZheruiL](https://github.com/ZheruiL)
+# Example to open the cashier
 
 ```dart
 bool await SunmiPrinter.drawerStatus(); //check if the cash drawer is connect or disconnect
 await SunmiPrinter.openDrawer(); //open de cash drawer
 int await SunmiPrinter.drawerTimesOpen(); //How many times the cash drawer was opened
-
  ```
 
 ### List of enum printer mode
