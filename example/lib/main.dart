@@ -10,7 +10,7 @@ import 'package:sunmi_task_printer/sunmi_task_printer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await SunmiTaskPrinter.bindingService();
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.landscapeRight, DeviceOrientation.landscapeRight]);
   runApp(const MyApp());
@@ -80,7 +80,7 @@ class _HomeState extends State<Home> {
 
   /// must binding ur printer at first init in app
   Future<bool?> _bindingPrinter() async {
-    return SunmiTaskPrinter.bindingService();
+    return
   }
 
   @override
