@@ -12,11 +12,13 @@ class ColumnMaker {
   String text;
   int width;
   SunmiPrintAlign align;
+
   ColumnMaker({
     this.text = '',
     this.width = 2,
     this.align = SunmiPrintAlign.LEFT,
   });
+
   //Convert to json
   Map<String, String> toJson() {
     int value = 0;
