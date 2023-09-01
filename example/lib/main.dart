@@ -80,8 +80,7 @@ class _HomeState extends State<Home> {
 
   /// must binding ur printer at first init in app
   Future<bool?> _bindingPrinter() async {
-    final bool? result = await SunmiTaskPrinter.bindingService();
-    return result;
+    return SunmiTaskPrinter.bindingService();
   }
 
   @override
@@ -300,7 +299,7 @@ class _HomeState extends State<Home> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     GestureDetector(
-                      onTap: ()  async {
+                      onTap: () async {
                         SunmiTaskPrinter.initPrinter();
                         Uint8List byte = await _getImageFromAsset('assets/images/dash.jpeg');
                         SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
@@ -321,8 +320,7 @@ class _HomeState extends State<Home> {
                     ),
                     GestureDetector(
                       onTap: () async {
-                        await SunmiTaskPrinter.initPrinter();
-
+                        SunmiTaskPrinter.initPrinter();
                         String url = 'https://avatars.githubusercontent.com/u/14101776?s=100';
                         // convert image to Uint8List format
                         Uint8List byte = (await NetworkAssetBundle(Uri.parse(url)).load(url))
@@ -350,7 +348,7 @@ class _HomeState extends State<Home> {
                 child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
                   ElevatedButton(
                       onPressed: () async {
-                        await SunmiTaskPrinter.cut();
+                        SunmiTaskPrinter.cut();
                       },
                       child: const Text('CUT PAPER')),
                 ]),
@@ -438,8 +436,7 @@ class _HomeState extends State<Home> {
                         SunmiTaskPrinter.bold();
                         SunmiTaskPrinter.printText('Transaction\'s Qrcode');
                         SunmiTaskPrinter.resetBold();
-                        SunmiTaskPrinter.printQRCode(
-                            'https://github.com/brasizza/sunmi_printer');
+                        SunmiTaskPrinter.printQRCode('https://github.com/brasizza/sunmi_printer');
                         SunmiTaskPrinter.lineWrap(2);
                         SunmiTaskPrinter.exitTransactionPrint(true);
                       },

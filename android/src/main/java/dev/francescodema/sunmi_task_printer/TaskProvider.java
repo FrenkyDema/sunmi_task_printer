@@ -1,6 +1,7 @@
 package dev.francescodema.sunmi_task_printer;
 
 
+import android.annotation.SuppressLint;
 import android.os.RemoteException;
 
 import java.util.Objects;
@@ -30,8 +31,10 @@ public class TaskProvider {
      * @return the optional
      * @throws RemoteException the printer exception
      */
+    @SuppressLint("NewApi")
     public static <Res> Optional<Res> runFunctionWithException(Callable<Res> function) throws RemoteException {
         try {
+
             return Optional.ofNullable(CompletableFuture.supplyAsync(() -> {
                 try {
                     return executor.submit(function).get();
@@ -46,6 +49,7 @@ public class TaskProvider {
                 }
                 return null;
             }).join());
+
         } catch (CompletionException ex) {
             try {
                 throw Objects.requireNonNull(ex.getCause());
@@ -63,6 +67,7 @@ public class TaskProvider {
      * @param function the function
      * @throws RemoteException the printer exception
      */
+    @SuppressLint("NewApi")
     public static void runFunctionWithException(ThrowingRunnable function) throws RemoteException {
         try {
             CompletableFuture.supplyAsync(() -> {

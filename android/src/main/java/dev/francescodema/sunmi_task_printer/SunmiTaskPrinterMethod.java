@@ -1,6 +1,7 @@
 package dev.francescodema.sunmi_task_printer;
 
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -9,8 +10,6 @@ import android.graphics.Bitmap;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.widget.Toast;
-
-import java.util.ArrayList;
 
 import woyou.aidlservice.jiuiv5.ICallback;
 import woyou.aidlservice.jiuiv5.ILcdCallback;
@@ -21,9 +20,6 @@ import woyou.aidlservice.jiuiv5.IWoyouService;
  * The type Sunmi task printer method.
  */
 public class SunmiTaskPrinterMethod {
-
-    private final String TAG = SunmiTaskPrinterMethod.class.getSimpleName();
-    private final ArrayList<Boolean> _printingText = new ArrayList<>();
     private IWoyouService _printerService;
     private final Context _context;
 
@@ -115,6 +111,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return the last status int
      */
+    @SuppressLint("NewApi")
     public int updatePrinter() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.updatePrinterState()).orElse(0);
@@ -230,6 +227,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return the printer serial number, "DEFAULT" if is null, "NOT FOUND" if error
      */
+    @SuppressLint("NewApi")
     public String getPrinterSerialNumber() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterSerialNo()).orElse("DEFAULT");
@@ -251,6 +249,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return the printer serial number, "DEFAULT" if is null, "NOT FOUND" if error
      */
+    @SuppressLint("NewApi")
     public String getPrinterVersion() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterVersion()).orElse("DEFAULT");
@@ -268,6 +267,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return the printer paper size int
      */
+    @SuppressLint("NewApi")
     public int getPrinterPaperSize() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterPaper()).orElse(1);
@@ -283,6 +283,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return 0 common mode 1 black label mode, else 3
      */
+    @SuppressLint("NewApi")
     public int getPrinterMode() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.getPrinterMode()).orElse(3);
@@ -313,6 +314,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return is drawer connected: true, disconnected: false
      */
+    @SuppressLint("NewApi")
     public Boolean drawerIsConnected() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.getDrawerStatus()).orElse(false);
@@ -326,6 +328,7 @@ public class SunmiTaskPrinterMethod {
      *
      * @return int open number of times
      */
+    @SuppressLint("NewApi")
     public int timesOpened() {
         try {
             return TaskProvider.runFunctionWithException(() -> _printerService.getOpenDrawerTimes()).orElse(0);
@@ -448,19 +451,19 @@ public class SunmiTaskPrinterMethod {
     private ICallback _callback() {
         return new ICallback() {
             @Override
-            public void onRunResult(boolean isSuccess) throws RemoteException {
+            public void onRunResult(boolean isSuccess) {
             }
 
             @Override
-            public void onReturnString(String result) throws RemoteException {
+            public void onReturnString(String result) {
             }
 
             @Override
-            public void onRaiseException(int code, String msg) throws RemoteException {
+            public void onRaiseException(int code, String msg) {
             }
 
             @Override
-            public void onPrintResult(int code, String msg) throws RemoteException {
+            public void onPrintResult(int code, String msg) {
             }
 
             @Override

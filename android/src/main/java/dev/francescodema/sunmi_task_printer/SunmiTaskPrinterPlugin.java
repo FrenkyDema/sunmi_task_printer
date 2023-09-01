@@ -156,8 +156,7 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
                 case "LCD_BITMAP" -> {
                     byte[] lcdBitmapData = call.argument("bitmap");
                     Bitmap lcdBitmap = BitmapFactory.decodeByteArray(lcdBitmapData, 0, lcdBitmapData.length);
-                    sunmiTaskPrinterMethod.sendLCDBitmap(lcdBitmap);
-                    result.success(true);
+                    result.success(sunmiTaskPrinterMethod.sendLCDBitmap(lcdBitmap));
                 }
                 case "LCD_DOUBLE_STRING" ->
                         result.success(sunmiTaskPrinterMethod.sendLCDDoubleString(call.argument("topText"), call.argument("bottomText")));

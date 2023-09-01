@@ -8,7 +8,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath 'com.android.tools.build:gradle:8.1.1'
     }
 }
 
@@ -22,22 +22,20 @@ rootProject.allprojects {
 apply plugin: 'com.android.library'
 
 android {
-    if (project.android.hasProperty("namespace")) {
-        namespace 'dev.francescodema.sunmi_task_printer'
-    }
+    namespace 'dev.francescodema.sunmi_task_printer'
 
-    compileSdkVersion 33
+    compileSdk 33
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_14
         targetCompatibility JavaVersion.VERSION_14
     }
+    defaultConfig {
+        minSdk 19
+    }
 
     buildFeatures {
         aidl = true
-    }
-    defaultConfig {
-        targetSdk 24
     }
 
 
@@ -49,9 +47,9 @@ android {
     testOptions {
         unitTests.all {
             testLogging {
-               events "passed", "skipped", "failed", "standardOut", "standardError"
-               outputs.upToDateWhen {false}
-               showStandardStreams = true
+                events "passed", "skipped", "failed", "standardOut", "standardError"
+                outputs.upToDateWhen { false }
+                showStandardStreams = true
             }
         }
     }
