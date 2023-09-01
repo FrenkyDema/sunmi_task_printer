@@ -1,6 +1,6 @@
 # sunmi_task_printer
 
-## Important:
+## Important
 
 **THIS PACKAGE WILL WORK ONLY IN ANDROID!**
 
@@ -32,7 +32,7 @@ flutter pub add sunmi_task_printer
 - [x] Printer serial no - Get the serial number of the printer
 - [x] Printer version - Get the printer's version
 - [x] Printer paper size - Get the paper size ( 0: 80mm 1: 58mm)
-- [x] LCD Print a image  [ytyng](https://github.com/ytyng)
+- [x] LCD Print a image [ytyng](https://github.com/ytyng)
 - [x] LCD Print a string , multi lines as double lines Thanks to [ytyng](https://github.com/ytyng)
 - [x] Open de cash drawer Thanks to [ZheruiL](https://github.com/ZheruiL)
 - [x] Check if the cash drawer is connected or not
@@ -41,16 +41,16 @@ flutter pub add sunmi_task_printer
 ## Tested Devices
 
 ```bash
-Sunmi V2 Pro 
+Sunmi V2 Pro
 Sunmi T2 mini
 Sunmi V2S
 ```
 
-# **You can also combine this package with the
+## \*\*You can also combine this package with the
 
-package [esc_pos_utils](https://pub.dev/packages/esc_pos_utils)**
+package [esc_pos_utils](https://pub.dev/packages/esc_pos_utils)\*\*
 
-_With this package you  **can**  create a custom escpos and than you don't need to use any other
+_With this package you **can** create a custom escpos and than you don't need to use any other
 command.
 This is good if you already have a code that another printers use, and u can reuse this code as
 well_
@@ -62,63 +62,63 @@ well_
 import 'package:sunmi_task_printer/sunmi_task_printer.dart';
 
 // all method from sunmi printer need to async await
-await SunmiPrinter.bindingPrinter(); // must bind the printer first. for more example.. pls refer to example tab.
+await SunmiTaskPrinter.bindingPrinter(); // must bind the printer first. for more example.. pls refer to example tab.
 ```
 
 ## Example code when use for transaction printing
 
 ```dart
-await SunmiPrinter.startTransactionPrint(true);
+await SunmiTaskPrinter.startTransactionPrint(true);
 
-await SunmiPrinter.setAlignment(SunmiPrintAlign.RIGHT); // Right align
-await SunmiPrinter.printText('Align right');
+await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.RIGHT); // Right align
+await SunmiTaskPrinter.printText('Align right');
 
-await SunmiPrinter.setAlignment(SunmiPrintAlign.LEFT);// Left align
-await SunmiPrinter.printText('Align left');
+await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.LEFT);// Left align
+await SunmiTaskPrinter.printText('Align left');
 
-await SunmiPrinter.setAlignment(SunmiPrintAlign.CENTER);// Center align
-await SunmiPrinter.printText('Align center');
+await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);// Center align
+await SunmiTaskPrinter.printText('Align center');
 
-await SunmiPrinter.lineWrap(2); // Jump 2 lines
+await SunmiTaskPrinter.lineWrap(2); // Jump 2 lines
 
-await SunmiPrinter.setFontSize(SunmiFontSize.XL); // Set font to very large
-await SunmiPrinter.printText('Very Large font!');
-await SunmiPrinter.resetFontSize(); // Reset font to medium size
+await SunmiTaskPrinter.setFontSize(SunmiFontSize.XL); // Set font to very large
+await SunmiTaskPrinter.printText('Very Large font!');
+await SunmiTaskPrinter.resetFontSize(); // Reset font to medium size
 
-await SunmiPrinter.setCustomFontSize(12); // SET CUSTOM FONT 12
-await SunmiPrinter.printText('Custom font size!!!');
-await SunmiPrinter.resetFontSize(); // Reset font to medium size
+await SunmiTaskPrinter.setCustomFontSize(12); // SET CUSTOM FONT 12
+await SunmiTaskPrinter.printText('Custom font size!!!');
+await SunmiTaskPrinter.resetFontSize(); // Reset font to medium size
 
-await SunmiPrinter.printQRCode('https://github.com/FrenkyDema/sunmi_task_printer'); // PRINT A QRCODE
-await SunmiPrinter.submitTransactionPrint(); // SUBMIT and cut paper
-await SunmiPrinter.exitTransactionPrint(true); // Close the transaction
+await SunmiTaskPrinter.printQRCode('https://github.com/FrenkyDema/sunmi_task_printer'); // PRINT A QRCODE
+await SunmiTaskPrinter.submitTransactionPrint(); // SUBMIT and cut paper
+await SunmiTaskPrinter.exitTransactionPrint(true); // Close the transaction
 ```
 
-# Example code for LCD functions
+## Example code for LCD functions
 
 ```dart
-await SunmiPrinter.lcdInitialize(); //Initialize the LCD 
-await SunmiPrinter.lcdWakeup(); //Turn the LCD ON
-await SunmiPrinter.lcdSleep (); //Turn the LCD OFF 
-await SunmiPrinter.lcdClear (); //Clear LCD screen 
-await SunmiPrinter.lcdString ('Hello ' ); //Write a simple line  
-await SunmiPrinter.lcdString('Hello'); //Write a simple line  
-await SunmiPrinter.lcdDoubleString('Hello', 'World'); //Write two lines Unit8List 
-byte = await readFileBytes('assets/images/128x40.png'); 
-await SunmiPrinter.lcdImage(byte); // Put an image in LCD 
-await SunmiPrinter.lcdFillString('abcDEFgj0123\$&=+', size: 16, fill: true); // Print a string and fill with zeros until the size is reached 
-await SunmiPrinter.lcdMultiString([ 'Welcome to flutter.', 'Align 2.',], [ 1, 2, ] ); // Write multiple lines with alignment
+await SunmiTaskPrinter.lcdInitialize(); //Initialize the LCD
+await SunmiTaskPrinter.lcdWakeup(); //Turn the LCD ON
+await SunmiTaskPrinter.lcdSleep (); //Turn the LCD OFF
+await SunmiTaskPrinter.lcdClear (); //Clear LCD screen
+await SunmiTaskPrinter.lcdString ('Hello ' ); //Write a simple line
+await SunmiTaskPrinter.lcdString('Hello'); //Write a simple line
+await SunmiTaskPrinter.lcdDoubleString('Hello', 'World'); //Write two lines Unit8List
+byte = await readFileBytes('assets/images/128x40.png');
+await SunmiTaskPrinter.lcdImage(byte); // Put an image in LCD
+await SunmiTaskPrinter.lcdFillString('abcDEFgj0123\$&=+', size: 16, fill: true); // Print a string and fill with zeros until the size is reached
+await SunmiTaskPrinter.lcdMultiString([ 'Welcome to flutter.', 'Align 2.',], [ 1, 2, ] ); // Write multiple lines with alignment
 ```
 
-# Example to open the cashier
+## Example to open the cashier
 
 ```dart
-bool await SunmiPrinter.drawerStatus(); //check if the cash drawer is connect or disconnect
-await SunmiPrinter.openDrawer(); //open de cash drawer
-int await SunmiPrinter.drawerTimesOpen(); //How many times the cash drawer was opened
- ```
+bool await SunmiTaskPrinter.drawerStatus(); //check if the cash drawer is connect or disconnect
+await SunmiTaskPrinter.openDrawer(); //open de cash drawer
+int await SunmiTaskPrinter.drawerTimesOpen(); //How many times the cash drawer was opened
+```
 
-### List of enum printer mode
+## List of enum printer mode
 
 ```dart
 enum PrinterMode {
