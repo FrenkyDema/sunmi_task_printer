@@ -1,6 +1,6 @@
 name: sunmi_task_printer
-description: A new Flutter project.
-version: 0.0.1
+description: Package to manage the Sunmi printer and its drivers
+version: 0.0.2
 homepage: "https://github.com/FrenkyDema/sunmi_task_printer"
 
 environment:
