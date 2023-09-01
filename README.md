@@ -47,6 +47,7 @@ Sunmi V2S
 ```
 
 # **You can also combine this package with the
+
 package [esc_pos_utils](https://pub.dev/packages/esc_pos_utils)**
 
 _With this package you  **can**  create a custom escpos and than you don't need to use any other

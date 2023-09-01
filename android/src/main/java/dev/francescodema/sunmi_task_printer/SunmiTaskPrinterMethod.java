@@ -20,18 +20,8 @@ import woyou.aidlservice.jiuiv5.IWoyouService;
  * The type Sunmi task printer method.
  */
 public class SunmiTaskPrinterMethod {
-    private IWoyouService _printerService;
     private final Context _context;
-
-    /**
-     * Instantiates a new Sunmi task printer method.
-     *
-     * @param context the context
-     */
-    public SunmiTaskPrinterMethod(Context context) {
-        this._context = context;
-    }
-
+    private IWoyouService _printerService;
     private final ServiceConnection connService = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -54,6 +44,15 @@ public class SunmiTaskPrinterMethod {
             Toast.makeText(_context, "Sunmi Printer Service Disconnected", Toast.LENGTH_LONG).show();
         }
     };
+
+    /**
+     * Instantiates a new Sunmi task printer method.
+     *
+     * @param context the context
+     */
+    public SunmiTaskPrinterMethod(Context context) {
+        this._context = context;
+    }
 
     /**
      * Bind printer service.
