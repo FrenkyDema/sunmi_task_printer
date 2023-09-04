@@ -4,11 +4,9 @@
 
 **THIS PACKAGE WILL WORK ONLY IN ANDROID!**
 
-Support Sunmi and Null Safety.
-I build this flutter plugin based on this:
+It supports Sunmi and Null Safety. I developed this Flutter plugin based on the following:
 [Official Sunmi Inner Printer Doc](https://file.cdn.sunmi.com/SUNMIDOCS/%E5%95%86%E7%B1%B3%E5%86%85%E7%BD%AE%E6%89%93%E5%8D%B0%E6%9C%BA%E5%BC%80%E5%8F%91%E8%80%85%E6%96%87%E6%A1%A3EN-0224.pdf).
-But not all method from doc was included in this package, because i don't have equipment. If you
-have and can help me, just contact me on github!
+However, not all methods from the documentation were included in this package because I don't have access to the equipment. If you have the equipment and can assist, please contact me on GitHub!
 
 ## Installation
 
@@ -16,31 +14,32 @@ have and can help me, just contact me on github!
 flutter pub add sunmi_task_printer
 ```
 
-## What this package do
+## What this package does
 
-- [x] Write some text (with style or not!)
+- [x] Write text (with or without style)
 - [x] Change font size
-- [x] Jump (n) lines
-- [x] Draw a divisor line
-- [x] Bold mode on/off
-- [x] Print all types of Barcodes (see enum below)
-- [x] Print Qr-codes with custom width and error-level
-- [x] Print image from asset or from web (example show how to print both)
-- [x] Print rows like receipt with custom width and alignment
-- [x] Able to combine with some esc/pos code that you already have!
-- [x] Cut paper - Dedicated method just to cut the line
-- [x] Printer serial no - Get the serial number of the printer
-- [x] Printer version - Get the printer's version
-- [x] Printer paper size - Get the paper size ( 0: 80mm 1: 58mm)
-- [x] LCD Print a image [ytyng](https://github.com/ytyng)
-- [x] LCD Print a string , multi lines as double lines Thanks to [ytyng](https://github.com/ytyng)
-- [x] Open de cash drawer Thanks to [ZheruiL](https://github.com/ZheruiL)
-- [x] Check if the cash drawer is connected or not
-- [x] Get how many times the cash drawer was opened
+- [x] Insert line breaks
+- [x] Draw horizontal lines
+- [x] Enable or disable bold mode
+- [x] Print various types of barcodes (see enum below)
+- [x] Print QR codes with custom width and error level
+- [x] Print images from assets or the web (example demonstrates both)
+- [x] Print rows like receipts with custom width and alignment
+- [x] Combine with existing ESC/POS code
+- [x] Cut paper - Dedicated method for cutting paper
+- [x] Get the printer's serial number
+- [x] Get the printer's version
+- [x] Get the paper size (0: 80mm, 1: 58mm)
+- [x] LCD: Print an image [ytyng](https://github.com/ytyng)
+- [x] LCD: Print a string with multiple lines (double lines) Thanks to [ytyng](https://github.com/ytyng)
+- [x] Open the cash drawer Thanks to [ZheruiL](https://github.com/ZheruiL)
+- [x] Check if the cash drawer is connected
+- [x] Get the number of times the cash drawer was opened
+- [ ] Implement device status listener (TODO: Add methods for managing device states via a listener)
 
 ## Tested Devices
 
-```bash
+```
 Sunmi V2 Pro
 Sunmi T2 mini
 Sunmi V2S
@@ -50,25 +49,23 @@ Sunmi V2S
 
 package [esc_pos_utils](https://pub.dev/packages/esc_pos_utils)\*\*
 
-_With this package you **can** create a custom escpos and than you don't need to use any other
-command.
-This is good if you already have a code that another printers use, and u can reuse this code as
-well_
+_With this package, you **can** create custom ESC/POS commands, eliminating the need for additional commands.
+This is beneficial if you already have code that is compatible with other printers, as you can reuse that code as well._
 
-#Just see the example folder!
+# Just see the example folder!
 
 ```dart
-// import packages
+// Import packages
 import 'package:sunmi_task_printer/sunmi_task_printer.dart';
 
-// all method from sunmi task printer don't need async
-SunmiTaskPrinter.bindingPrinter(); // must bind the printer first. for more example.. pls refer to example tab.
+// All methods from Sunmi Task Printer do not require asynchronous calls.
+SunmiTaskPrinter.bindingPrinter(); // The plugin handles asynchronous operations automatically.
 ```
 
 ## Get device info
 
 ```dart
-//can use the future then for handle the function return value
+// No need to use async/await for these operations
 SunmiTaskPrinter.paperSize().then((int size) {
   setState(() {
     paperSize = size;
@@ -88,127 +85,7 @@ SunmiTaskPrinter.serialNumber().then((String serial) {
 });
 ```
 
-## Example code when use for transaction printing
+## Inspiration
 
-```dart
-SunmiTaskPrinter.startTransactionPrint(true);
+This package is a fork of [sunmi_printer_plus](https://pub.dev/packages/sunmi_printer_plus).
 
-SunmiTaskPrinter.setAlignment(SunmiPrintAlign.RIGHT); // Right align
-SunmiTaskPrinter.printText('Align right');
-
-SunmiTaskPrinter.setAlignment(SunmiPrintAlign.LEFT);// Left align
-SunmiTaskPrinter.printText('Align left');
-
-SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);// Center align
-SunmiTaskPrinter.printText('Align center');
-
-SunmiTaskPrinter.lineWrap(2); // Jump 2 lines
-
-SunmiTaskPrinter.setFontSize(SunmiFontSize.XL); // Set font to very large
-SunmiTaskPrinter.printText('Very Large font!');
-SunmiTaskPrinter.resetFontSize(); // Reset font to medium size
-
-SunmiTaskPrinter.setCustomFontSize(12); // SET CUSTOM FONT 12
-SunmiTaskPrinter.printText('Custom font size!!!');
-SunmiTaskPrinter.resetFontSize(); // Reset font to medium size
-
-SunmiTaskPrinter.printQRCode('https://github.com/FrenkyDema/sunmi_task_printer'); // PRINT A QRCODE
-SunmiTaskPrinter.submitTransactionPrint(); // SUBMIT and cut paper
-SunmiTaskPrinter.exitTransactionPrint(true); // Close the transaction
-```
-
-## Example code for LCD functions
-
-```dart
-SunmiTaskPrinter.lcdInitialize(); //Initialize the LCD
-SunmiTaskPrinter.lcdWakeup(); //Turn the LCD ON
-SunmiTaskPrinter.lcdSleep (); //Turn the LCD OFF
-SunmiTaskPrinter.lcdClear (); //Clear LCD screen
-SunmiTaskPrinter.lcdString ('Hello ' ); //Write a simple line
-SunmiTaskPrinter.lcdString('Hello'); //Write a simple line
-SunmiTaskPrinter.lcdDoubleString('Hello', 'World'); //Write two lines Unit8List
-byte = readFileBytes('assets/images/128x40.png');
-SunmiTaskPrinter.lcdImage(byte); // Put an image in LCD
-SunmiTaskPrinter.lcdFillString('abcDEFgj0123\$&=+', size: 16, fill: true); // Print a string and fill with zeros until the size is reached
-SunmiTaskPrinter.lcdMultiString([ 'Welcome to flutter.', 'Align 2.',], [ 1, 2, ] ); // Write multiple lines with alignment
-```
-
-## Example to open the cashier
-
-```dart
-bool SunmiTaskPrinter.drawerStatus(); //check if the cash drawer is connect or disconnect
-SunmiTaskPrinter.openDrawer(); //open de cash drawer
-int SunmiTaskPrinter.drawerTimesOpen(); //How many times the cash drawer was opened
-```
-
-## List of enum printer mode
-
-```dart
-enum PrinterMode {
-  NORMAL_MODE,
-  BLACK_LABEL_MODE,
-  LABEL_MODE
-}
-```
-
-### List of enum Alignments
-
-```dart
-enum SunmiPrintAlign {
-  LEFT,
-  CENTER,
-  RIGHT,
-}
-```
-
-### List of enum Qrcode levels
-
-```dart
-enum SunmiQrcodeLevel {
-  LEVEL_L,
-  LEVEL_M,
-  LEVEL_Q,
-  LEVEL_H,
-}
-```
-
-### List of enum Barcode types
-
-```dart
-enum SunmiBarcodeType {
-  UPCA,
-  UPCE,
-  JAN13,
-  JAN8,
-  CODE39,
-  ITF,
-  CODABAR,
-  CODE93,
-  CODE128,
-}
-```
-
-### List of enum Text position in barcode
-
-```dart
-enum SunmiBarcodeTextPos {
-  NO_TEXT,
-  TEXT_ABOVE,
-  TEXT_UNDER,
-  BOTH,
-}
-```
-
-### List of enum Font sizes
-
-```dart
-enum SunmiFontSize {
-  XS,
-  SM,
-  MD,
-  LG,
-  XL,
-}
-```
-
-# This is a fork from [sunmi_printer_plus](https://pub.dev/packages/sunmi_printer_plus)
