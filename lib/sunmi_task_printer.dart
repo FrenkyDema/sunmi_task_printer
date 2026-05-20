@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
@@ -7,13 +6,12 @@ import 'column_maker.dart';
 import 'enums.dart';
 import 'sunmi_style.dart';
 
-///*SunmiTaskPrinter*
+/// **SunmiTaskPrinter**
 ///
-///This class is a core of our printer system.
-///With this class you can print everything you like. If you want to print a text, qrcode, barcode, bold text, bigger text or the smallest text possible.
-///Your imagination is the limit!
+/// The orchestration core engine of the system layout layer.
+/// Directs method commands through to the low-level platform architecture interface.
 class SunmiTaskPrinter {
-  static final Map _printerStatus = {
+  static final Map<String, String> _printerStatus = {
     'ERROR': 'Something went wrong.',
     'NORMAL': 'Works normally',
     'ABNORMAL_COMMUNICATION': 'Abnormal communication',
@@ -29,52 +27,38 @@ class SunmiTaskPrinter {
     'EXCEPTION': 'Unknown Error code',
   };
 
-  ///A list to make human read the paper size
+  /// Structural map index values representing physical device line width specifications.
   static final List<int> _paperSize = [80, 58];
 
-  ///*sunmi_task_printer*
-  ///
-  //A callable method to start the communication with the native code!
+  /// Platform Channel link reference tracking target namespace instance.
   static const MethodChannel _channel = MethodChannel('sunmi_task_printer');
 
+  /// Retrieves the host runtime OS version string name.
   Future<String?> getPlatformVersion() async {
-    return await _channel.invokeMethod('getPlatformVersion');
+    return await _channel.invokeMethod<String>('getPlatformVersion');
   }
 
-  ///*bindingService*
-  ///
-  ///This method will initialize the service to start the whole print.
-  ///This method *Must* be executed before any other print and LCD command.
-  ///This method *Must* be executed before any drawer command.
+  /// Establishes an explicit background interface connection with the remote service wrapper.
+  /// This must execute before dispatching hardware layout configuration instructions.
   static Future<bool?> bindingService() async {
-    final bool? status = await _channel.invokeMethod('BIND_SERVICE');
-    return status;
+    return await _channel.invokeMethod<bool>('BIND_SERVICE');
   }
 
-  ///*unbindingService*
-  ///
-  ///This method is the opposite of [bindingService].
-  ///This will unbind or 'close' the connection with the service, and must be the last execution.
-
+  /// Disconnects and releases the background active driver hook connection context framework safely.
   static Future<bool?> unbindingService() async {
-    final bool? status = await _channel.invokeMethod('UNBIND_SERVICE');
-    return status;
+    return await _channel.invokeMethod<bool>('UNBIND_SERVICE');
   }
 
-  ///*initPrinter*
-  ///
-  ///This method will reset the printer styles, font and everything that can change your text, but the method will *NOT* erase the buffer inside.
+  /// Resets printing configurations, parameters, weights, and text styling states back to base defaults.
   static Future<bool?> initPrinter() async {
-    final bool? status = await _channel.invokeMethod('INIT_PRINTER');
-    return status;
+    return await _channel.invokeMethod<bool>('INIT_PRINTER');
   }
 
-  ///*getPrinterStatus*
-  ///
-  ///This method will give you the status of the printer.
-  ///Sometimes the printer can give you an error, so, try to print anyway.
+  /// Evaluates and yields the exact real-time structural hardware health state code.
   static Future<PrinterStatus> getPrinterStatus() async {
-    final String? status = await _channel.invokeMethod('GET_UPDATE_PRINTER');
+    final String? status = await _channel.invokeMethod<String>(
+      'GET_UPDATE_PRINTER',
+    );
     switch (status) {
       case 'ERROR':
         return PrinterStatus.ERROR;
@@ -107,21 +91,19 @@ class SunmiTaskPrinter {
     }
   }
 
-  ///*getPrinterStatusWithVerbose*
-  ///
-  ///Almost the same of  [getPrinterStatus] , but will return a text explained
-  ///@see the _printerStatus map!
+  /// Almost the same as [getPrinterStatus], but returns a human-readable verbose string description.
   static Future<String?> getPrinterStatusWithVerbose() async {
-    final String? status = await _channel.invokeMethod('GET_UPDATE_PRINTER');
-    final statusMsg = _printerStatus[status];
-    return statusMsg;
+    final String? status = await _channel.invokeMethod<String>(
+      'GET_UPDATE_PRINTER',
+    );
+    return _printerStatus[status ?? 'EXCEPTION'];
   }
 
-  ///*getPrinterMode*
-  ///
-  ///This method will return what mode your printer to print in one way or other, like label mode or normal mode
+  /// Evaluates the printing paper run mode setup configuration context state.
   static Future<PrinterMode> getPrinterMode() async {
-    final String mode = await _channel.invokeMethod('GET_PRINTER_MODE');
+    final String? mode = await _channel.invokeMethod<String>(
+      'GET_PRINTER_MODE',
+    );
     switch (mode) {
       case 'NORMAL_MODE':
         return PrinterMode.NORMAL_MODE;
@@ -134,59 +116,43 @@ class SunmiTaskPrinter {
     }
   }
 
-  ///*printText*
-  ///
-  ///This method will print a simple text in your printer
-  /// With the [SunmiStyle] you can put in one line, the size, alignment and bold
+  /// Dispatches plain text layout print strings over to the native core pipeline safely.
   static Future<void> printText(String text, {SunmiStyle? style}) async {
     if (style != null) {
       if (style.align != null) {
         await setAlignment(style.align!);
       }
-
       if (style.fontSize != null) {
         await setFontSize(style.fontSize!);
       }
-
-      if (style.bold != null) {
-        if (style.bold == true) {
-          await bold();
-        }
+      if (style.bold == true) {
+        await bold();
       }
     }
-    Map<String, dynamic> arguments = <String, dynamic>{"text": '$text\n'};
-    await _channel.invokeMethod("PRINT_TEXT", arguments);
+    await _channel.invokeMethod("PRINT_TEXT", {"text": '$text\n'});
     await initPrinter();
   }
 
-  ///*printRow*
-  ///
-  ///This method will print a row based in a list of [ColumnMaker].
+  /// Spits out dynamic complex tables using raw list maps instead of structural string JSON conversions.
   static Future<void> printRow({required List<ColumnMaker> cols}) async {
-    final jsonCols = List<Map<String, String>>.from(
-        cols.map<Map<String, String>>((ColumnMaker col) => col.toJson()));
-    Map<String, dynamic> arguments = <String, dynamic>{
-      "cols": json.encode(jsonCols)
-    };
-    await _channel.invokeMethod("PRINT_ROW", arguments);
+    final List<Map<String, dynamic>> rawColumnsList = cols
+        .map((col) => col.toJson())
+        .toList();
+    await _channel.invokeMethod("PRINT_ROW", {"cols": rawColumnsList});
   }
 
-  ///*printRawData*
-  ///
-  ///With this method you can print a raw data, or a data that was made with some esc/pos package to simplify your calls
-  ///*This is good if you have another print method that give you a [List<int>] that you can convert to esc/pos here
+  /// Passes explicit positional ESC/POS binary buffers natively over the system bridge safely.
   static Future<void> printRawData(Uint8List data) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"data": data};
-    await _channel.invokeMethod("RAW_DATA", arguments);
+    await _channel.invokeMethod("RAW_DATA", {"data": data});
   }
 
-  ///*printQRCode*
-  ///
-  ///With this method you can print a qrcode with some errorLevel and size.
-  static Future<void> printQRCode(String data,
-      {int size = 5,
-      SunmiQrcodeLevel errorLevel = SunmiQrcodeLevel.LEVEL_H}) async {
-    int errorCode = 3;
+  /// Builds a standard format vector QR Code image sequence payload pattern.
+  static Future<void> printQRCode(
+    String data, {
+    int size = 5,
+    SunmiQrcodeLevel errorLevel = SunmiQrcodeLevel.LEVEL_H,
+  }) async {
+    int errorCode;
     switch (errorLevel) {
       case SunmiQrcodeLevel.LEVEL_L:
         errorCode = 0;
@@ -201,25 +167,24 @@ class SunmiTaskPrinter {
         errorCode = 3;
         break;
     }
-    Map<String, dynamic> arguments = <String, dynamic>{
+    await _channel.invokeMethod("PRINT_QRCODE", {
       "data": data,
       'modulesize': size,
-      'errorlevel': errorCode
-    };
-    await _channel.invokeMethod("PRINT_QRCODE", arguments);
+      'errorlevel': errorCode,
+    });
   }
 
-  ///*printBarCode*
-  ///
-  ///With this method you can print a barcode with any type described below or in the enum section
-  static Future<void> printBarCode(String data,
-      {SunmiBarcodeType barcodeType = SunmiBarcodeType.CODE128,
-      int height = 162,
-      int width = 2,
-      SunmiBarcodeTextPos textPosition =
-          SunmiBarcodeTextPos.TEXT_ABOVE}) async {
+  /// Builds standard linear barcode configurations directly into raw layout channels.
+  static Future<void> printBarCode(
+    String data, {
+    SunmiBarcodeType barcodeType = SunmiBarcodeType.CODE128,
+    int height = 162,
+    int width = 2,
+    SunmiBarcodeTextPos textPosition = SunmiBarcodeTextPos.TEXT_ABOVE,
+  }) async {
     int codeType = 8;
-    int textPosition0 = 8;
+    int textPositionIndex = 1;
+
     switch (barcodeType) {
       case SunmiBarcodeType.UPCA:
         codeType = 0;
@@ -252,72 +217,52 @@ class SunmiTaskPrinter {
 
     switch (textPosition) {
       case SunmiBarcodeTextPos.NO_TEXT:
-        textPosition0 = 0;
+        textPositionIndex = 0;
         break;
       case SunmiBarcodeTextPos.TEXT_ABOVE:
-        textPosition0 = 1;
+        textPositionIndex = 1;
         break;
       case SunmiBarcodeTextPos.TEXT_UNDER:
-        textPosition0 = 2;
+        textPositionIndex = 2;
         break;
       case SunmiBarcodeTextPos.BOTH:
-        textPosition0 = 3;
+        textPositionIndex = 3;
         break;
     }
-    Map<String, dynamic> arguments = <String, dynamic>{
+
+    await _channel.invokeMethod("PRINT_BARCODE", {
       "data": data,
       'barcodeType': codeType,
-      'textPosition': textPosition0,
+      'textPosition': textPositionIndex,
       'width': width,
-      'height': height
-    };
-    await _channel.invokeMethod("PRINT_BARCODE", arguments);
+      'height': height,
+    });
   }
 
-  ///*lineWrap*
-  ///
-  ///With this method you can jump N lines in your pinter to make some spaces between sections
+  /// Feeds the printer paper mechanically by an explicit index tracking lines spacing layout.
   static Future<void> lineWrap(int lines) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"lines": lines};
-    await _channel.invokeMethod("LINE_WRAP", arguments);
+    await _channel.invokeMethod("LINE_WRAP", {"lines": lines});
   }
 
-  ///*line*
-  ///
-  ///With this method you can draw a line to divide sections.
-  static Future<void> line({
-    String ch = '-',
-    int len = 31,
-  }) async {
-    resetFontSize();
+  /// Utility draw line command helper for separating operational blocks cleanly.
+  static Future<void> line({String ch = '-', int len = 31}) async {
+    await resetFontSize();
     await printText(List.filled(len, ch[0]).join());
   }
 
-  ///*bold*
-  ///
-  ///With this method you can bold a string very easy, just put this method before a [printText] and everything after this method will be bold
-
+  /// Appends bold typeface printing parameters directly to downstream streams.
   static Future<void> bold() async {
-    final List<int> boldOn = [27, 69, 1];
-
-    await printRawData(Uint8List.fromList(boldOn));
+    await printRawData(Uint8List.fromList([27, 69, 1]));
   }
 
-  ///*resetBold*
-  ///
-  ///This method will just reset the bold to a normal font weight
+  /// Strips bold printing metrics from active character parameters.
   static Future<void> resetBold() async {
-    final List<int> boldOff = [27, 69, 0];
-
-    await printRawData(Uint8List.fromList(boldOff));
+    await printRawData(Uint8List.fromList([27, 69, 0]));
   }
 
-  ///*setAlignment*
-  ///
-  ///With this method you can align your text in three ways, like LEFT, RIGHT and CENTER.
-
+  /// Modifies horizontal alignment rules for downstream font buffers.
   static Future<void> setAlignment(SunmiPrintAlign alignment) async {
-    late int value;
+    int value;
     switch (alignment) {
       case SunmiPrintAlign.LEFT:
         value = 0;
@@ -328,82 +273,53 @@ class SunmiTaskPrinter {
       case SunmiPrintAlign.RIGHT:
         value = 2;
         break;
-      default:
-        value = 0;
     }
-    Map<String, dynamic> arguments = <String, dynamic>{"alignment": value};
-    await _channel.invokeMethod("SET_ALIGNMENT", arguments);
+    await _channel.invokeMethod("SET_ALIGNMENT", {"alignment": value});
   }
 
-  ///*printImage*
-  ///
-  ///With this method you can print an image in your printer.
-  ///Just follow the examples that you can print even an image from web or an asset inside your project
+  /// Compiles a byte collection array sequence directly into standard raster device outputs.
   static Future<void> printImage(Uint8List img) async {
-    Map<String, dynamic> arguments = <String, dynamic>{};
-    arguments.putIfAbsent("bitmap", () => img);
-    await _channel.invokeMethod("PRINT_IMAGE", arguments);
+    await _channel.invokeMethod("PRINT_IMAGE", {"bitmap": img});
   }
 
-  ///*startTransactionPrint*
-  ///
-  ///If you want to print in one transaction, you can start the transaction, build your print commands without send to the buffer
+  /// Activates transactional execution grouping rules on device memory caches.
   static Future<void> startTransactionPrint([bool clear = false]) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"clearEnter": clear};
-    await _channel.invokeMethod("ENTER_PRINTER_BUFFER", arguments);
+    await _channel.invokeMethod("ENTER_PRINTER_BUFFER", {"clearEnter": clear});
   }
 
-  ///*submitTransactionPrint*
-  ///
-  ///This method will submit your transaction to the buffer
+  /// Forces execution flush operations on buffered layout transactional blocks.
   static Future<void> submitTransactionPrint() async {
     await _channel.invokeMethod("COMMIT_PRINTER_BUFFER");
   }
 
-  ///*cut*
-  ///
-  ///This method will  cut the paper
+  /// Triggers the automatic cutting knife layer (if supported on the hardware).
   static Future<void> cut() async {
     await _channel.invokeMethod("CUT_PAPER");
   }
 
-  ///*openDrawer*
-  ///
-  ///This method will open drawer
+  /// Sends electrical pulse currents to trip standard outer connection cash drawer relays.
   static Future<void> openDrawer() async {
     await _channel.invokeMethod("OPEN_DRAWER");
   }
 
-  ///*drawerStatus*
-  ///
-  ///This method will  check the status of the drawer true/false (connect disconnect)
+  /// Verifies if a valid link loop context is established with the terminal drawer mechanism.
   static Future<bool> drawerStatus() async {
-    return await _channel.invokeMethod("DRAWER_STATUS") ?? false;
+    return await _channel.invokeMethod<bool>("DRAWER_STATUS") ?? false;
   }
 
-  ///*drawerTimesOpen*
-  ///
-  ///This method will  check how many times the drawer was open
+  /// Returns total tracked lifetime open counts recorded directly from local peripheral memory blocks.
   static Future<int> drawerTimesOpen() async {
-    return await _channel.invokeMethod("DRAWER_OPENED") ?? 0;
+    return await _channel.invokeMethod<int>("DRAWER_OPENED") ?? 0;
   }
 
-  ///*exitTransactionPrint*
-  ///
-  ///This method will close the transaction
-
+  /// Deactivates and exits the transaction buffer mode safely.
   static Future<void> exitTransactionPrint([bool clear = true]) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"clearExit": clear};
-    await _channel.invokeMethod("EXIT_PRINTER_BUFFER", arguments);
+    await _channel.invokeMethod("EXIT_PRINTER_BUFFER", {"clearExit": clear});
   }
 
-  ///*setFontSize*
-  ///
-  ///This method will change the font-size , between extra small and extra large.
-  ///You can see the sizes below or in the enum file.
-
+  /// Modifies active character rendering heights using structured enum configuration parameters.
   static Future<void> setFontSize(SunmiFontSize size) async {
-    int fontSize = 24;
+    int fontSize;
     switch (size) {
       case SunmiFontSize.XS:
         fontSize = 14;
@@ -421,104 +337,90 @@ class SunmiTaskPrinter {
         fontSize = 42;
         break;
     }
-    Map<String, dynamic> arguments = <String, dynamic>{"size": fontSize};
-
-    await _channel.invokeMethod("FONT_SIZE", arguments);
+    await _channel.invokeMethod("FONT_SIZE", {"size": fontSize});
   }
 
-  ///*setCustomFontSize*
-  ///
-  ///This method will allow you to put any font size integer and try the best fit for you
+  /// Allows setting raw custom character scale sizes.
   static Future<void> setCustomFontSize(int size) async {
-    Map<String, dynamic> arguments = <String, dynamic>{"size": size};
-    await _channel.invokeMethod("FONT_SIZE", arguments);
+    await _channel.invokeMethod("FONT_SIZE", {"size": size});
   }
 
-  ///*resetFontSize*
-  ///
-  ///This method will reset the font size to the medium (default) size
+  /// Restores active text printing parameters back to base medium level scaling metrics.
   static Future<void> resetFontSize() async {
-    Map<String, dynamic> arguments = <String, dynamic>{"size": 24};
-    await _channel.invokeMethod("FONT_SIZE", arguments);
+    await _channel.invokeMethod("FONT_SIZE", {"size": 24});
   }
 
-  ///*paperSize*
-  ///
-  /// Get the paper size , because they can change the printers between 56 and 80mm
+  /// Evaluates and isolates loaded thermal role line width constraints (usually 80 or 58).
   static Future<int> paperSize() async {
-    int? size = await _channel.invokeMethod("PAPER_SIZE");
-    return _paperSize[size ?? 0];
+    final int? sizeIndex = await _channel.invokeMethod<int>("PAPER_SIZE");
+    if (sizeIndex == null || sizeIndex < 0 || sizeIndex >= _paperSize.length) {
+      return _paperSize[0];
+    }
+    return _paperSize[sizeIndex];
   }
 
-  ///*serialNumber*
-  ///
-  /// Get the serial number
+  /// Returns the hardware tracking component serial identification reference string.
   static Future<String> serialNumber() async {
-    return await _channel.invokeMethod("PRINTER_SERIAL_NUMBER");
+    return await _channel.invokeMethod<String>("PRINTER_SERIAL_NUMBER") ??
+        "UNKNOWN";
   }
 
-  ///*printerVersion*
-  ///
-  /// Get the printer's version
+  /// Returns internal manufacturer package compilation software version tags.
   static Future<String> printerVersion() async {
-    return await _channel.invokeMethod("PRINTER_VERSION");
+    return await _channel.invokeMethod<String>("PRINTER_VERSION") ?? "UNKNOWN";
   }
 
-  /// LCD Methods
-
-  /// Initialize LCD
+  /// Secondary mini LCD Customer Display configuration methods.
   static Future<void> lcdInitialize() async {
-    return await _channel.invokeMethod("LCD_COMMAND", {"flag": 1});
+    await _channel.invokeMethod("LCD_COMMAND", {"flag": 1});
   }
 
-  /// Wakeup LCD
   static Future<void> lcdWakeup() async {
-    return await _channel.invokeMethod("LCD_COMMAND", {"flag": 2});
+    await _channel.invokeMethod("LCD_COMMAND", {"flag": 2});
   }
 
-  /// Sleep LCD
   static Future<void> lcdSleep() async {
-    return await _channel.invokeMethod("LCD_COMMAND", {"flag": 3});
+    await _channel.invokeMethod("LCD_COMMAND", {"flag": 3});
   }
 
-  /// clear LCD
   static Future<void> lcdClear() async {
-    return await _channel.invokeMethod("LCD_COMMAND", {"flag": 4});
+    await _channel.invokeMethod("LCD_COMMAND", {"flag": 4});
   }
 
-  /// Display string on LCD
   static Future<void> lcdString(String text) async {
-    return await _channel.invokeMethod("LCD_STRING", {"string": text});
+    await _channel.invokeMethod("LCD_STRING", {"string": text});
   }
 
-  /// Display Bitmap on LCD
-  /// Image size is 128 x 40 pixels.
   static Future<void> lcdImage(Uint8List img) async {
-    return await _channel.invokeMethod("LCD_BITMAP", {"bitmap": img});
+    await _channel.invokeMethod("LCD_BITMAP", {"bitmap": img});
   }
 
-  /// Display 2 lines string on LCD
   static Future<void> lcdDoubleString(String topText, String bottomText) async {
-    return await _channel.invokeMethod(
-        "LCD_DOUBLE_STRING", {"topText": topText, "bottomText": bottomText});
+    await _channel.invokeMethod("LCD_DOUBLE_STRING", {
+      "topText": topText,
+      "bottomText": bottomText,
+    });
   }
 
-  /// Send a single-line text in a customized size.
-  /// If fill = true, The size parameter be used to set the width of characters.
-  /// e.g. size:16, fill:false ... Half size char ( Like lcdDoubleString() )
-  ///      size:32, fill:false ... Full size char ( Like lcdString() )
-  ///      size:64, fill:true ... Width 64 pixel huge character.
-  static Future<void> lcdFillString(String text,
-      {int size = 32, bool fill = false}) async {
-    return await _channel.invokeMethod(
-        "LCD_FILL_STRING", {"string": text, "size": size, "fill": fill});
+  static Future<void> lcdFillString(
+    String text, {
+    int size = 32,
+    bool fill = false,
+  }) async {
+    await _channel.invokeMethod("LCD_FILL_STRING", {
+      "string": text,
+      "size": size,
+      "fill": fill,
+    });
   }
 
-  /// Display variable height multiline string.
-  /// aligns: The weight of the solid content of each line. Like flex.
   static Future<void> lcdMultiString(
-      List<String> texts, List<int> aligns) async {
-    return await _channel
-        .invokeMethod("LCD_MULTI_STRING", {"text": texts, "align": aligns});
+    List<String> texts,
+    List<int> aligns,
+  ) async {
+    await _channel.invokeMethod("LCD_MULTI_STRING", {
+      "text": texts,
+      "align": aligns,
+    });
   }
 }

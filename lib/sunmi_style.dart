@@ -1,14 +1,18 @@
 import 'enums.dart';
 
-///*SunmiStyle*
+/// **SunmiStyle**
 ///
-///With this class you can build your own layout to print some text.
-///The thext can come already with [align], [fontSize] and *bold*, and then you don't need to type 3 commands to do the same THING!
-
+/// Blueprint class to cluster print parameters, avoiding the need to execute 3 distinct statements to modify layout metrics.
 class SunmiStyle {
-  SunmiFontSize? fontSize;
-  SunmiPrintAlign? align;
-  bool? bold;
+  /// Font scaling dimension metric flag configuration.
+  final SunmiFontSize? fontSize;
 
-  SunmiStyle({this.fontSize, this.align, this.bold});
+  /// Layout horizon align direction policy indicator.
+  final SunmiPrintAlign? align;
+
+  /// Text formatting configuration weight option parameter.
+  final bool? bold;
+
+  /// Instantiates a structural layout style instance template.
+  const SunmiStyle({this.fontSize, this.align, this.bold});
 }

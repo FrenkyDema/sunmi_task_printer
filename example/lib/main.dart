@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sunmi_task_printer/column_maker.dart';
@@ -11,35 +10,40 @@ import 'package:sunmi_task_printer/sunmi_task_printer.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// must binding ur printer at first
-  await SunmiTaskPrinter.bindingService();
+  debugPrint(
+      "[SunmiDebug] Initializing WidgetsFlutterBinding and binding service...");
+  try {
+    final bool? bound = await SunmiTaskPrinter.bindingService();
+    debugPrint("[SunmiDebug] Service binding returned: $bound");
+  } catch (e) {
+    debugPrint("[SunmiDebug] CRITICAL: Service binding failed: $e");
+  }
+
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.landscapeRight, DeviceOrientation.landscapeRight]);
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'Sunmi Printer',
-        theme: ThemeData(
-          primaryColor: Colors.black,
-        ),
-        debugShowCheckedModeBanner: false,
-        home: const Home());
+      title: 'Sunmi Printer Example',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+        useMaterial3: true,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: const Home(),
+    );
   }
 }
 
 class Home extends StatefulWidget {
-  const Home({Key? key}) : super(key: key);
+  const Home({super.key});
 
   @override
   State<Home> createState() => _HomeState();
@@ -47,474 +51,409 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int paperSize = 0;
-  String serialNumber = "";
-  String printerVersion = "";
+  String serialNumber = "Loading...";
+  String printerVersion = "Loading...";
 
   @override
   void initState() {
     super.initState();
-    SunmiTaskPrinter.paperSize().then((int size) {
-      setState(() {
-        paperSize = size;
-      });
-    });
+    _fetchPrinterMetadata();
+  }
 
-    SunmiTaskPrinter.printerVersion().then((String version) {
-      setState(() {
-        printerVersion = version;
-      });
-    });
+  Future<void> _fetchPrinterMetadata() async {
+    debugPrint("[SunmiDebug] Fetching printer hardware metadata...");
+    try {
+      final results = await Future.wait([
+        SunmiTaskPrinter.paperSize(),
+        SunmiTaskPrinter.printerVersion(),
+        SunmiTaskPrinter.serialNumber(),
+      ]);
 
-    SunmiTaskPrinter.serialNumber().then((String serial) {
-      setState(() {
-        serialNumber = serial;
-      });
-    });
+      debugPrint(
+          "[SunmiDebug] Metadata fetched successfully. Size: ${results[0]}, Version: ${results[1]}, Serial: ${results[2]}");
+
+      if (mounted) {
+        setState(() {
+          paperSize = results[0] as int;
+          printerVersion = results[1] as String;
+          serialNumber = results[2] as String;
+        });
+      }
+    } catch (e) {
+      debugPrint("[SunmiDebug] Error fetching metadata properties: $e");
+    }
+  }
+
+  /// Utility helper to print logging state diagnostics onto the device screen
+  void _showLogFeedback(String msg, {bool isError = false}) {
+    debugPrint("${isError ? '[SunmiError]' : '[SunmiLog]'} $msg");
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<Uint8List> _getImageFromAsset(String iconPath) async {
+    final ByteData fileData = await rootBundle.load(iconPath);
+    return fileData.buffer
+        .asUint8List(fileData.offsetInBytes, fileData.lengthInBytes);
+  }
+
+  /// Standard operational loop encapsulating printer commands safely
+  Future<void> _executePrintJob(
+      String jobName, Future<void> Function() actions) async {
+    _showLogFeedback("Starting print job: $jobName...");
+    try {
+      debugPrint("[SunmiDebug] Resetting styles with initPrinter()");
+      await SunmiTaskPrinter.initPrinter();
+
+      debugPrint("[SunmiDebug] Entering transaction print buffer (clear=true)");
+      await SunmiTaskPrinter.startTransactionPrint(true);
+
+      // Execute custom print blocks
+      await actions();
+
+      debugPrint(
+          "[SunmiDebug] Exiting transaction buffer mode and committing content to layout...");
+      // This sends the exit signal AND commits the transaction queue to the printing head
+      await SunmiTaskPrinter.exitTransactionPrint(true);
+
+      _showLogFeedback("$jobName sent successfully!");
+    } catch (e) {
+      _showLogFeedback("Failed executing $jobName: $e", isError: true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text('Sunmi printer Example'),
+      appBar: AppBar(
+        title: const Text('Sunmi Task Printer Testing Suite'),
+        elevation: 2,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Text("Paper Configuration Profile Width: $paperSize mm",
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text("Hardware Serial: $serialNumber"),
+                    const SizedBox(height: 4),
+                    Text("Service Firmware Release Tag: $printerVersion"),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionTitle('Barcodes & Base Commands'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () => _executePrintJob('QR Code Print', () async {
+                    await SunmiTaskPrinter.printQRCode(
+                        'https://github.com/francescodema');
+                    await SunmiTaskPrinter.lineWrap(2);
+                  }),
+                  icon: const Icon(Icons.qr_code_2),
+                  label: const Text('Print QR'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _executePrintJob('Barcode Print', () async {
+                    await SunmiTaskPrinter.printBarCode(
+                      '1234567890',
+                      barcodeType: SunmiBarcodeType.CODE128,
+                      textPosition: SunmiBarcodeTextPos.TEXT_UNDER,
+                      height: 40,
+                    );
+                    await SunmiTaskPrinter.lineWrap(2);
+                  }),
+                  icon: const Icon(Icons.line_weight),
+                  label: const Text('Print Barcode'),
+                ),
+                ElevatedButton(
+                  onPressed: () =>
+                      _executePrintJob('Divider Line Print', () async {
+                    await SunmiTaskPrinter.line();
+                    await SunmiTaskPrinter.lineWrap(1);
+                  }),
+                  child: const Text('Print Divider Line'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    _showLogFeedback("Sending raw wrap lines command...");
+                    try {
+                      await SunmiTaskPrinter.lineWrap(2);
+                    } catch (e) {
+                      _showLogFeedback("Wrap error: $e", isError: true);
+                    }
+                  },
+                  child: const Text('Wrap 2 Lines (Direct)'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSectionTitle('Text Styling Variations'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ElevatedButton(
+                  onPressed: () => _executePrintJob('Bold Text', () async {
+                    await SunmiTaskPrinter.printText(
+                        'Hello I\'m bold copy line',
+                        style: const SunmiStyle(bold: true));
+                    await SunmiTaskPrinter.lineWrap(1);
+                  }),
+                  child: const Text('Bold'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _executePrintJob('Size XS Text', () async {
+                    await SunmiTaskPrinter.printText('XS Font Size Text',
+                        style: const SunmiStyle(fontSize: SunmiFontSize.XS));
+                    await SunmiTaskPrinter.lineWrap(1);
+                  }),
+                  child: const Text('Size XS'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _executePrintJob('Size MD Text', () async {
+                    await SunmiTaskPrinter.printText('MD Font Size Text',
+                        style: const SunmiStyle(fontSize: SunmiFontSize.MD));
+                    await SunmiTaskPrinter.lineWrap(1);
+                  }),
+                  child: const Text('Size MD'),
+                ),
+                ElevatedButton(
+                  onPressed: () => _executePrintJob('Size LG Text', () async {
+                    await SunmiTaskPrinter.printText('LG Font Size Text',
+                        style: const SunmiStyle(fontSize: SunmiFontSize.LG));
+                    await SunmiTaskPrinter.lineWrap(1);
+                  }),
+                  child: const Text('Size LG'),
+                ),
+                ElevatedButton(
+                  onPressed: () =>
+                      _executePrintJob('Centered Block text', () async {
+                    await SunmiTaskPrinter.printText('Centered Bold Large',
+                        style: const SunmiStyle(
+                            align: SunmiPrintAlign.CENTER,
+                            bold: true,
+                            fontSize: SunmiFontSize.LG));
+                    await SunmiTaskPrinter.lineWrap(1);
+                  }),
+                  child: const Text('Center Block Alignment'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSectionTitle('Document Printing Profiles'),
+            Card(
+              color: Colors.amber.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: const Text('Generate Full Demo Bill Receipt',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text(
+                      'Prints header, alignment tests, tabular columns rows, and summary block data.'),
+                  trailing: const Icon(Icons.print, color: Colors.amber),
+                  onTap: _printDemoTicketProfile,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildSectionTitle('Hardware Control Relays'),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      _showLogFeedback("Triggering cutter relay...");
+                      try {
+                        await SunmiTaskPrinter.cut();
+                      } catch (e) {
+                        _showLogFeedback("Cutter error: $e", isError: true);
+                      }
+                    },
+                    icon: const Icon(Icons.content_cut),
+                    label: const Text('Trigger Knife Cut'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade50),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      _showLogFeedback("Triggering drawer kick...");
+                      try {
+                        await SunmiTaskPrinter.openDrawer();
+                      } catch (e) {
+                        _showLogFeedback("Drawer error: $e", isError: true);
+                      }
+                    },
+                    icon: const Icon(Icons.sensor_window),
+                    label: const Text('Open Cash Box'),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade50),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _buildSectionTitle('Raster Image Pipelines'),
+            Row(
+              children: [
+                Expanded(
+                  child: Card(
+                    child: InkWell(
+                      onTap: () =>
+                          _executePrintJob('Asset Image Print', () async {
+                        final Uint8List bytes =
+                            await _getImageFromAsset('assets/images/dash.jpeg');
+                        await SunmiTaskPrinter.setAlignment(
+                            SunmiPrintAlign.CENTER);
+                        await SunmiTaskPrinter.printImage(bytes);
+                        await SunmiTaskPrinter.lineWrap(2);
+                      }),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Image.asset('assets/images/dash.jpeg',
+                                height: 60,
+                                width: 60,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.image, size: 60)),
+                            const SizedBox(height: 8),
+                            const Text('Print Local Asset',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Card(
+                    child: InkWell(
+                      onTap: () =>
+                          _executePrintJob('Network Image Print', () async {
+                        const String url =
+                            'https://avatars.githubusercontent.com/u/14101776?s=100';
+                        final Uint8List bytes =
+                            (await NetworkAssetBundle(Uri.parse(url)).load(url))
+                                .buffer
+                                .asUint8List();
+                        await SunmiTaskPrinter.setAlignment(
+                            SunmiPrintAlign.CENTER);
+                        await SunmiTaskPrinter.printImage(bytes);
+                        await SunmiTaskPrinter.lineWrap(2);
+                      }),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Image.network(
+                                'https://avatars.githubusercontent.com/u/14101776?s=100',
+                                height: 60,
+                                width: 60,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.cloud_off, size: 60)),
+                            const SizedBox(height: 8),
+                            const Text('Print Network URL',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Text("Paper size: $paperSize"),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Text("Serial number: $serialNumber"),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.0),
-                child: Text("Printer version: $printerVersion"),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printQRCode('https://github.com/brasizza/sunmi_printer');
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Print qrCode')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printBarCode(
-                            '1234567890',
-                            barcodeType: SunmiBarcodeType.CODE128,
-                            textPosition: SunmiBarcodeTextPos.TEXT_UNDER,
-                            height: 20,
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Print barCode')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.line();
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Print line')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.lineWrap(2);
-                        },
-                        child: const Text('Wrap line')),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printText(
-                            'Hello I\'m bold',
-                            style: SunmiStyle(bold: true),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Bold Text')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printText(
-                            'Very small!',
-                            style: SunmiStyle(fontSize: SunmiFontSize.XS),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Very small font')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printText(
-                            'Very small!',
-                            style: SunmiStyle(fontSize: SunmiFontSize.SM),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Small font')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printText(
-                            'Normal font',
-                            style: SunmiStyle(fontSize: SunmiFontSize.MD),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Normal font')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.printText(
-                            'Large font',
-                            style: SunmiStyle(fontSize: SunmiFontSize.LG),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Large font')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.setFontSize(SunmiFontSize.XL);
-                          SunmiTaskPrinter.printText('Very Large font!');
-                          SunmiTaskPrinter.resetFontSize();
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Very large font')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.setCustomFontSize(13);
-                          SunmiTaskPrinter.printText('Very Large font!');
-                          SunmiTaskPrinter.resetFontSize();
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Custom size font')),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printText(
-                            'Align right',
-                            style: SunmiStyle(align: SunmiPrintAlign.RIGHT),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Align right')),
-                    ElevatedButton(
-                        onPressed: () {
-                          SunmiTaskPrinter.initPrinter();
-                          SunmiTaskPrinter.startTransactionPrint(true);
-                          SunmiTaskPrinter.printText(
-                            'Align left',
-                            style: SunmiStyle(align: SunmiPrintAlign.LEFT),
-                          );
-                          SunmiTaskPrinter.lineWrap(2);
-                          SunmiTaskPrinter.exitTransactionPrint(true);
-                        },
-                        child: const Text('Align left')),
-                    ElevatedButton(
-                      onPressed: () {
-                        SunmiTaskPrinter.initPrinter();
-                        SunmiTaskPrinter.startTransactionPrint(true);
-                        SunmiTaskPrinter.printText(
-                          'Align center/ LARGE TEXT AND BOLD',
-                          style: SunmiStyle(
-                              align: SunmiPrintAlign.CENTER,
-                              bold: true,
-                              fontSize: SunmiFontSize.LG),
-                        );
-                        SunmiTaskPrinter.lineWrap(2);
-                        SunmiTaskPrinter.exitTransactionPrint(true);
-                      },
-                      child: const Text('Align center'),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    GestureDetector(
-                      onTap: () async {
-                        SunmiTaskPrinter.initPrinter();
-                        Uint8List byte = await _getImageFromAsset('assets/images/dash.jpeg');
-                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        SunmiTaskPrinter.startTransactionPrint(true);
-                        SunmiTaskPrinter.printImage(byte);
-                        SunmiTaskPrinter.lineWrap(2);
-                        SunmiTaskPrinter.exitTransactionPrint(true);
-                      },
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assets/images/dash.jpeg',
-                            width: 100,
-                          ),
-                          const Text('Print this image from asset!')
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () async {
-                        SunmiTaskPrinter.initPrinter();
-                        String url = 'https://avatars.githubusercontent.com/u/14101776?s=100';
-                        // convert image to Uint8List format
-                        Uint8List byte = (await NetworkAssetBundle(Uri.parse(url)).load(url))
-                            .buffer
-                            .asUint8List();
-                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        SunmiTaskPrinter.startTransactionPrint(true);
-                        SunmiTaskPrinter.printImage(byte);
-                        SunmiTaskPrinter.lineWrap(2);
-                        SunmiTaskPrinter.exitTransactionPrint(true);
-                      },
-                      child: Column(
-                        children: [
-                          Image.network('https://avatars.githubusercontent.com/u/14101776?s=100'),
-                          const Text('Print this image from WEB!')
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  ElevatedButton(
-                      onPressed: () async {
-                        SunmiTaskPrinter.cut();
-                      },
-                      child: const Text('CUT PAPER')),
-                ]),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  ElevatedButton(
-                      onPressed: () async {
-                        SunmiTaskPrinter.initPrinter();
-                        SunmiTaskPrinter.startTransactionPrint(true);
-                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        SunmiTaskPrinter.line();
-                        SunmiTaskPrinter.printText('Payment receipt');
-                        SunmiTaskPrinter.printText('Using the old way to bold!');
-                        SunmiTaskPrinter.line();
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'Name', width: 12, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: 'Qty', width: 6, align: SunmiPrintAlign.CENTER),
-                          ColumnMaker(text: 'UN', width: 6, align: SunmiPrintAlign.RIGHT),
-                          ColumnMaker(text: 'TOT', width: 6, align: SunmiPrintAlign.RIGHT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'Fries', width: 12, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: '4x', width: 6, align: SunmiPrintAlign.CENTER),
-                          ColumnMaker(text: '3.00', width: 6, align: SunmiPrintAlign.RIGHT),
-                          ColumnMaker(text: '12.00', width: 6, align: SunmiPrintAlign.RIGHT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'Strawberry', width: 12, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: '1x', width: 6, align: SunmiPrintAlign.CENTER),
-                          ColumnMaker(text: '24.44', width: 6, align: SunmiPrintAlign.RIGHT),
-                          ColumnMaker(text: '24.44', width: 6, align: SunmiPrintAlign.RIGHT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'Soda', width: 12, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: '1x', width: 6, align: SunmiPrintAlign.CENTER),
-                          ColumnMaker(text: '1.99', width: 6, align: SunmiPrintAlign.RIGHT),
-                          ColumnMaker(text: '1.99', width: 6, align: SunmiPrintAlign.RIGHT),
-                        ]);
-
-                        SunmiTaskPrinter.line();
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'TOTAL', width: 25, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: '38.43', width: 5, align: SunmiPrintAlign.RIGHT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'ARABIC TEXT', width: 15, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: 'اسم المشترك', width: 15, align: SunmiPrintAlign.LEFT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'اسم المشترك', width: 15, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: 'اسم المشترك', width: 15, align: SunmiPrintAlign.LEFT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'RUSSIAN TEXT', width: 15, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(
-                              text: 'Санкт-Петербу́рг', width: 15, align: SunmiPrintAlign.LEFT),
-                        ]);
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(
-                              text: 'Санкт-Петербу́рг', width: 15, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(
-                              text: 'Санкт-Петербу́рг', width: 15, align: SunmiPrintAlign.LEFT),
-                        ]);
-
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: 'CHINESE TEXT', width: 15, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: '風俗通義', width: 15, align: SunmiPrintAlign.LEFT),
-                        ]);
-                        SunmiTaskPrinter.printRow(cols: [
-                          ColumnMaker(text: '風俗通義', width: 15, align: SunmiPrintAlign.LEFT),
-                          ColumnMaker(text: '風俗通義', width: 15, align: SunmiPrintAlign.LEFT),
-                        ]);
-
-                        SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
-                        SunmiTaskPrinter.line();
-                        SunmiTaskPrinter.bold();
-                        SunmiTaskPrinter.printText('Transaction\'s Qrcode');
-                        SunmiTaskPrinter.resetBold();
-                        SunmiTaskPrinter.printQRCode('https://github.com/brasizza/sunmi_printer');
-                        SunmiTaskPrinter.lineWrap(2);
-                        SunmiTaskPrinter.exitTransactionPrint(true);
-                      },
-                      child: const Text('TICKET EXAMPLE')),
-                ]),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  ElevatedButton(
-                      onPressed: () async {
-                        final List<int> escPos = await _customEscPos();
-                        SunmiTaskPrinter.initPrinter();
-                        SunmiTaskPrinter.startTransactionPrint(true);
-                        SunmiTaskPrinter.printRawData(Uint8List.fromList(escPos));
-                        SunmiTaskPrinter.exitTransactionPrint(true);
-                      },
-                      child: const Text('Custom ESC/POS to print')),
-                ]),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
-                  ElevatedButton(
-                      onPressed: () {
-                        SunmiTaskPrinter.openDrawer();
-                      },
-                      child: const Text('Open Drawer')),
-                ]),
-              ),
-            ],
-          ),
-        ));
+      ),
+    );
   }
-}
 
-Future<Uint8List> readFileBytes(String path) async {
-  ByteData fileData = await rootBundle.load(path);
-  Uint8List fileUnit8List =
-      fileData.buffer.asUint8List(fileData.offsetInBytes, fileData.lengthInBytes);
-  return fileUnit8List;
-}
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
+      child: Text(title,
+          style: const TextStyle(
+              fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey)),
+    );
+  }
 
-Future<Uint8List> _getImageFromAsset(String iconPath) async {
-  return await readFileBytes(iconPath);
-}
+  Future<void> _printDemoTicketProfile() async {
+    _showLogFeedback("Preparing full ticket layout...");
+    try {
+      await SunmiTaskPrinter.initPrinter();
+      await SunmiTaskPrinter.startTransactionPrint(true);
+      await SunmiTaskPrinter.setAlignment(SunmiPrintAlign.CENTER);
+      await SunmiTaskPrinter.line();
+      await SunmiTaskPrinter.printText('CUSTOMER RECEIPT');
+      await SunmiTaskPrinter.line();
 
-Future<List<int>> _customEscPos() async {
-  final profile = await CapabilityProfile.load();
-  final generator = Generator(PaperSize.mm58, profile);
-  List<int> bytes = [];
+      await SunmiTaskPrinter.printRow(cols: [
+        ColumnMaker(text: 'Item Desc', width: 12, align: SunmiPrintAlign.LEFT),
+        ColumnMaker(text: 'Qty', width: 6, align: SunmiPrintAlign.CENTER),
+        ColumnMaker(text: 'Price', width: 6, align: SunmiPrintAlign.RIGHT),
+        ColumnMaker(text: 'Total', width: 6, align: SunmiPrintAlign.RIGHT),
+      ]);
 
-  bytes += generator.text(
-      'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
-  bytes += generator.text('Special 1: àÀ èÈ éÉ ûÛ üÜ çÇ ôÔ',
-      styles: const PosStyles(codeTable: 'CP1252'));
-  bytes += generator.text('Special 2: blåbærgrød', styles: const PosStyles(codeTable: 'CP1252'));
+      await SunmiTaskPrinter.printRow(cols: [
+        ColumnMaker(
+            text: 'Fries Crinkle', width: 12, align: SunmiPrintAlign.LEFT),
+        ColumnMaker(text: '4x', width: 6, align: SunmiPrintAlign.CENTER),
+        ColumnMaker(text: '3.00', width: 6, align: SunmiPrintAlign.RIGHT),
+        ColumnMaker(text: '12.00', width: 6, align: SunmiPrintAlign.RIGHT),
+      ]);
 
-  bytes += generator.text('Bold text', styles: const PosStyles(bold: true));
-  bytes += generator.text('Reverse text', styles: const PosStyles(reverse: true));
-  bytes +=
-      generator.text('Underlined text', styles: const PosStyles(underline: true), linesAfter: 1);
-  bytes += generator.text('Align left', styles: const PosStyles(align: PosAlign.left));
-  bytes += generator.text('Align center', styles: const PosStyles(align: PosAlign.center));
-  bytes +=
-      generator.text('Align right', styles: const PosStyles(align: PosAlign.right), linesAfter: 1);
-  bytes += generator.qrcode('Barcode by escpos', size: QRSize.Size4, cor: QRCorrection.H);
-  bytes += generator.feed(2);
+      await SunmiTaskPrinter.printRow(cols: [
+        ColumnMaker(
+            text: 'Strawberry Shk', width: 12, align: SunmiPrintAlign.LEFT),
+        ColumnMaker(text: '1x', width: 6, align: SunmiPrintAlign.CENTER),
+        ColumnMaker(text: '24.44', width: 6, align: SunmiPrintAlign.RIGHT),
+        ColumnMaker(text: '24.44', width: 6, align: SunmiPrintAlign.RIGHT),
+      ]);
 
-  bytes += generator.row([
-    PosColumn(
-      text: 'col3',
-      width: 3,
-      styles: const PosStyles(align: PosAlign.center, underline: true),
-    ),
-    PosColumn(
-      text: 'col6',
-      width: 6,
-      styles: const PosStyles(align: PosAlign.center, underline: true),
-    ),
-    PosColumn(
-      text: 'col3',
-      width: 3,
-      styles: const PosStyles(align: PosAlign.center, underline: true),
-    ),
-  ]);
+      await SunmiTaskPrinter.line();
 
-  bytes += generator.text('Text size 200%',
-      styles: const PosStyles(
-        height: PosTextSize.size2,
-        width: PosTextSize.size2,
-      ));
+      await SunmiTaskPrinter.printRow(cols: [
+        ColumnMaker(text: 'TOTAL DUE', width: 20, align: SunmiPrintAlign.LEFT),
+        ColumnMaker(text: '36.44', width: 10, align: SunmiPrintAlign.RIGHT),
+      ]);
 
-  bytes += generator.reset();
-  bytes += generator.cut();
+      await SunmiTaskPrinter.line();
+      await SunmiTaskPrinter.printQRCode('https://github.com/francescodema');
+      await SunmiTaskPrinter.lineWrap(3);
 
-  return bytes;
+      // Flush and empty transaction buffer to release the feed gears
+      debugPrint(
+          "[SunmiDebug] Completing ticket profile via exitTransactionPrint(true)...");
+      await SunmiTaskPrinter.exitTransactionPrint(true);
+
+      _showLogFeedback("Full receipt profile printed!");
+    } catch (e) {
+      _showLogFeedback("Receipt profile build failed: $e", isError: true);
+    }
+  }
 }
