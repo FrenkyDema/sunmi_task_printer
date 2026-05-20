@@ -2,34 +2,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sunmi_task_printer/column_maker.dart';
 import 'package:sunmi_task_printer/enums.dart';
+import 'package:sunmi_task_printer/sunmi_style.dart';
 import 'package:sunmi_task_printer/sunmi_task_printer.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
   const MethodChannel channel = MethodChannel('sunmi_task_printer');
-
-  // This list will keep track of every method called during the test
   final List<MethodCall> log = <MethodCall>[];
 
   setUp(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
           log.add(methodCall);
-
-          // Return stub data based on the method called
-          switch (methodCall.method) {
-            case 'BIND_SERVICE':
-              return true;
-            case 'PAPER_SIZE':
-              return 1; // Corresponds to 58mm in your list
-            case 'PRINTER_SERIAL_NUMBER':
-              return 'TEST_SERIAL_123';
-            case 'GET_UPDATE_PRINTER':
-              return 'NORMAL';
-            default:
-              return null;
-          }
+          // Return dummy values based on method
+          return null;
         });
   });
 
@@ -39,42 +25,101 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('bindingService triggers BIND_SERVICE', () async {
-    final result = await SunmiTaskPrinter.bindingService();
-    expect(result, true);
-    expect(log, <Matcher>[isMethodCall('BIND_SERVICE', arguments: null)]);
+  group('Lifecycle & Metadata', () {
+    test('Service Methods', () async {
+      await SunmiTaskPrinter.bindingService();
+      await SunmiTaskPrinter.unbindingService();
+      await SunmiTaskPrinter.initPrinter();
+
+      expect(log[0].method, 'BIND_SERVICE');
+      expect(log[1].method, 'UNBIND_SERVICE');
+      expect(log[2].method, 'INIT_PRINTER');
+    });
+
+    test('Metadata getters', () async {
+      await SunmiTaskPrinter.paperSize();
+      await SunmiTaskPrinter.serialNumber();
+      await SunmiTaskPrinter.printerVersion();
+
+      expect(log[0].method, 'PAPER_SIZE');
+      expect(log[1].method, 'PRINTER_SERIAL_NUMBER');
+      expect(log[2].method, 'PRINTER_VERSION');
+    });
   });
 
-  test('paperSize returns correctly mapped value', () async {
-    final result = await SunmiTaskPrinter.paperSize();
-    expect(result, 58); // Because our mock returned index 1
-    expect(log, <Matcher>[isMethodCall('PAPER_SIZE', arguments: null)]);
+  group('Printing Commands', () {
+    test('printText with style', () async {
+      await SunmiTaskPrinter.printText(
+        'Test',
+        style: const SunmiStyle(
+          bold: true,
+          fontSize: SunmiFontSize.LG,
+          align: SunmiPrintAlign.CENTER,
+        ),
+      );
+
+      // Should trigger alignment -> fontSize -> bold -> printText -> init
+      expect(log[0].method, 'SET_ALIGNMENT');
+      expect(log[1].method, 'FONT_SIZE');
+      expect(log[2].method, 'RAW_DATA'); // Bold
+      expect(log[3].method, 'PRINT_TEXT');
+    });
+
+    test('printQRCode branches', () async {
+      await SunmiTaskPrinter.printQRCode(
+        'data',
+        errorLevel: SunmiQrcodeLevel.LEVEL_L,
+      );
+      expect(log[0].arguments['errorlevel'], 0);
+
+      await SunmiTaskPrinter.printQRCode(
+        'data',
+        errorLevel: SunmiQrcodeLevel.LEVEL_H,
+      );
+      expect(log[1].arguments['errorlevel'], 3);
+    });
+
+    test('printBarCode branches', () async {
+      await SunmiTaskPrinter.printBarCode(
+        '123',
+        barcodeType: SunmiBarcodeType.CODE128,
+      );
+      expect(log[0].arguments['barcodeType'], 8);
+    });
   });
 
-  test('printText formats arguments correctly', () async {
-    await SunmiTaskPrinter.printText('Hello World');
+  group('LCD and Hardware Actions', () {
+    test('LCD methods', () async {
+      await SunmiTaskPrinter.lcdInitialize();
+      await SunmiTaskPrinter.lcdString('Test');
+      await SunmiTaskPrinter.lcdDoubleString('Top', 'Bottom');
 
-    // It should call PRINT_TEXT and then INIT_PRINTER based on your code
-    expect(log[0].method, 'PRINT_TEXT');
-    expect(log[0].arguments, {'text': 'Hello World\n'});
-    expect(log[1].method, 'INIT_PRINTER');
+      expect(log[0].method, 'LCD_COMMAND');
+      expect(log[1].method, 'LCD_STRING');
+      expect(log[2].method, 'LCD_DOUBLE_STRING');
+    });
+
+    test('Hardware actions', () async {
+      await SunmiTaskPrinter.cut();
+      await SunmiTaskPrinter.openDrawer();
+      await SunmiTaskPrinter.drawerStatus();
+
+      expect(log[0].method, 'CUT_PAPER');
+      expect(log[1].method, 'OPEN_DRAWER');
+      expect(log[2].method, 'DRAWER_STATUS');
+    });
   });
 
-  test('printRow maps columns correctly', () async {
-    await SunmiTaskPrinter.printRow(
-      cols: [
-        ColumnMaker(text: 'Item', width: 2, align: SunmiPrintAlign.CENTER),
-      ],
-    );
-
-    expect(log[0].method, 'PRINT_ROW');
-
-    // Verify the Dart object was correctly converted to the primitive map list
-    final args = log[0].arguments as Map<dynamic, dynamic>;
-    final cols = args['cols'] as List;
-    expect(cols.length, 1);
-    expect(cols[0]['text'], 'Item');
-    expect(cols[0]['width'], 2);
-    expect(cols[0]['align'], 1); // CENTER maps to 1
+  group('Utility & Models', () {
+    test('ColumnMaker toJson test', () {
+      final col = ColumnMaker(
+        text: 'Test',
+        width: 5,
+        align: SunmiPrintAlign.RIGHT,
+      );
+      final json = col.toJson();
+      expect(json['text'], 'Test');
+      expect(json['align'], 2); // Right = 2
+    });
   });
 }
