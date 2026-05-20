@@ -1,0 +1,35 @@
+name: Analyze & Test
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - "**/README.md"
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Flutter Analyze & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart Code
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+
+      - name: Run base tests
+        run: flutter test

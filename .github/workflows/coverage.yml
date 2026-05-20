@@ -1,0 +1,79 @@
+name: Coverage Badge & Web Report
+
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - "**/README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write # Grants the GITHUB_TOKEN permission to push the badge
+  pages: write
+  id-token: write
+
+jobs:
+  coverage-and-deploy:
+    name: Coverage & Deploy Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Generate HTML & Badge SVG
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+          
+          genhtml -o coverage coverage/lcov.info
+          
+          COVERAGE_PERCENT=$(lcov --summary coverage/lcov.info | grep "lines......" | grep -o '[0-9.]*%' | tr -d '%')
+          echo "COVERAGE_PERCENT=$COVERAGE_PERCENT" >> $GITHUB_ENV
+          
+          curl -o coverage-badge.svg "https://img.shields.io/badge/Coverage-${COVERAGE_PERCENT}%25-brightgreen.svg"
+          mkdir -p .github/badges/
+          mv coverage-badge.svg .github/badges/coverage-badge.svg
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'coverage'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Push Badge to coverage branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git checkout -B coverage
+          
+          git add -f .github/badges/coverage-badge.svg
+          
+          git commit -m "chore: Update coverage badge [skip ci]" || echo "No changes to commit"
+          
+          # Using the built-in GITHUB_TOKEN instead of an external app token
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin coverage --force
