@@ -1,7 +1,7 @@
 # sunmi_task_printer
 
 [![Analyze & Test](https://github.com/FrenkyDema/sunmi_task_printer/actions/workflows/analyze_and_test.yml/badge.svg)](https://github.com/FrenkyDema/sunmi_task_printer/actions/workflows/analyze_and_test.yml)
-![Coverage](https://raw.githubusercontent.com/FrenkyDema/sunmi_task_printer/coverage/.github/badges/coverage-badge.svg)
+[![Coverage](https://raw.githubusercontent.com/FrenkyDema/sunmi_task_printer/coverage/.github/badges/coverage-badge.svg)](http://francescodema.dev/sunmi_task_printer/)
 [![Pub Version](https://img.shields.io/pub/v/sunmi_task_printer.svg)](https://pub.dev/packages/sunmi_task_printer)
 
 ## Important
