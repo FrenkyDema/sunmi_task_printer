@@ -12,7 +12,7 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       channel,
-      (MethodCall methodCall) async {
+          (MethodCall methodCall) async {
         return '42';
       },
     );
