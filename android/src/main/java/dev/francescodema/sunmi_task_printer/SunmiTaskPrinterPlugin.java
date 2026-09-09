@@ -32,6 +32,10 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        if (sunmiTaskPrinterMethod == null) {
+            result.error("NOT_ATTACHED", "Plugin is detached from the Flutter engine", null);
+            return;
+        }
         switch (call.method) {
             case "getPlatformVersion" ->
                     result.success("Android " + android.os.Build.VERSION.RELEASE);
@@ -167,5 +171,10 @@ public class SunmiTaskPrinterPlugin implements FlutterPlugin, MethodCallHandler 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         channel.setMethodCallHandler(null);
+        channel = null;
+        if (sunmiTaskPrinterMethod != null) {
+            sunmiTaskPrinterMethod.dispose();
+            sunmiTaskPrinterMethod = null;
+        }
     }
 }

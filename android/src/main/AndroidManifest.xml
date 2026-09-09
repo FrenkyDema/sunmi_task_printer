@@ -1,3 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="dev.francescodema.sunmi_task_printer">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!--
+    Android 11+ (targetSdk >= 30) filters which packages an app can see.
+    Without this declaration bindService() silently returns false and the
+    Sunmi printer service is reported as "not found" even when installed.
+  -->
+  <queries>
+    <package android:name="woyou.aidlservice.jiuiv5" />
+    <intent>
+      <action android:name="woyou.aidlservice.jiuiv5.IWoyouService" />
+    </intent>
+  </queries>
 </manifest>
