@@ -108,6 +108,53 @@ void main() {
       expect(log[1].method, 'OPEN_DRAWER');
       expect(log[2].method, 'DRAWER_STATUS');
     });
+
+    test('Drawer failures surface instead of reporting success', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+            log.add(methodCall);
+            throw PlatformException(
+              code: 'OPERATION_FAILED',
+              message: 'Opening the cash drawer was rejected by the printer',
+            );
+          });
+
+      await expectLater(
+        SunmiTaskPrinter.openDrawer(),
+        throwsA(
+          isA<PlatformException>().having(
+            (e) => e.code,
+            'code',
+            'OPERATION_FAILED',
+          ),
+        ),
+      );
+    });
+
+    test('Drawer diagnostics do not mask an unreachable service', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+            log.add(methodCall);
+            throw PlatformException(
+              code: 'UNAVAILABLE',
+              message: 'Printer service is not connected',
+            );
+          });
+
+      // A dead binding must not read as "no drawer attached" or "opened 0 times".
+      await expectLater(
+        SunmiTaskPrinter.drawerStatus(),
+        throwsA(
+          isA<PlatformException>().having((e) => e.code, 'code', 'UNAVAILABLE'),
+        ),
+      );
+      await expectLater(
+        SunmiTaskPrinter.drawerTimesOpen(),
+        throwsA(
+          isA<PlatformException>().having((e) => e.code, 'code', 'UNAVAILABLE'),
+        ),
+      );
+    });
   });
 
   group('Utility & Models', () {

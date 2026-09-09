@@ -13,14 +13,20 @@ void main() async {
   debugPrint(
       "[SunmiDebug] Initializing WidgetsFlutterBinding and binding service...");
   try {
-    final bool? bound = await SunmiTaskPrinter.bindingService();
+    // Bounded wait: the UI must come up even if the printer service is missing
+    // or slow to connect, otherwise runApp() is never reached.
+    final bool? bound = await SunmiTaskPrinter.bindingService()
+        .timeout(const Duration(seconds: 5));
     debugPrint("[SunmiDebug] Service binding returned: $bound");
+  } on TimeoutException {
+    debugPrint(
+        "[SunmiDebug] Service binding timed out; continuing without it.");
   } catch (e) {
-    debugPrint("[SunmiDebug] CRITICAL: Service binding failed: $e");
+    debugPrint("[SunmiDebug] Service binding failed: $e");
   }
 
   await SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.landscapeRight, DeviceOrientation.landscapeRight]);
+      [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
 
   runApp(const MyApp());
 }

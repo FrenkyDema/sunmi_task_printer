@@ -10,6 +10,11 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.RemoteException;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import io.flutter.plugin.common.MethodChannel.Result;
 import woyou.aidlservice.jiuiv5.ICallback;
 import woyou.aidlservice.jiuiv5.ILcdCallback;
@@ -24,21 +29,62 @@ public class SunmiTaskPrinterMethod {
     private final Context _context;
     private IWoyouService _printerService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+    /**
+     * Pending BIND_SERVICE result, resolved exactly once by whichever callback
+     * fires first. Touched only from the main thread.
+     */
     private Result bindResultPending;
+
+    /**
+     * True once bindService() has been accepted by the system, regardless of
+     * whether onServiceConnected has fired yet. Needed so unbindService() can
+     * release a connection that never completed.
+     */
+    private boolean isBound;
+
+    /**
+     * Milliseconds to wait for a printer callback before giving up. The AIDL
+     * service is normally prompt; this only guards against a callback that the
+     * firmware never delivers, so Dart is never left awaiting forever.
+     */
+    private static final long CALLBACK_TIMEOUT_MS = 5000;
+
+    /**
+     * Strong references to callbacks currently in flight. A Binder stub passed
+     * to a remote process is otherwise eligible for garbage collection before
+     * the reply arrives, which would silently drop the result.
+     */
+    private final Set<ICallback> pendingCallbacks = Collections.synchronizedSet(new HashSet<>());
 
     private final ServiceConnection connService = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             _printerService = IWoyouService.Stub.asInterface(service);
-            if (bindResultPending != null) {
-                bindResultPending.success(true);
-                bindResultPending = null;
-            }
+            resolveBindResult(true, null, null);
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
+            // The process died but the binding survives: Android calls
+            // onServiceConnected again once the service is back.
             _printerService = null;
+        }
+
+        @Override
+        public void onNullBinding(ComponentName name) {
+            // The service exists but refused to return a binder: never leave Dart awaiting.
+            resolveBindResult(false, "NULL_BINDING", "Printer service returned a null binding");
+        }
+
+        @Override
+        public void onBindingDied(ComponentName name) {
+            // Terminal for this connection: without an explicit rebind every
+            // later call would fail with "Service disconnected" until the host
+            // app is restarted.
+            _printerService = null;
+            resolveBindResult(false, "BINDING_DIED", "Printer service binding died");
+            rebind();
         }
     };
 
@@ -46,24 +92,125 @@ public class SunmiTaskPrinterMethod {
         this._context = context;
     }
 
+    private Intent printerServiceIntent() {
+        Intent intent = new Intent();
+        intent.setPackage("woyou.aidlservice.jiuiv5");
+        intent.setAction("woyou.aidlservice.jiuiv5.IWoyouService");
+        return intent;
+    }
+
+    /**
+     * Drops the current connection and asks for a fresh one. Used after the
+     * binding dies, and lazily when a command finds the service missing.
+     */
+    private void rebind() {
+        try {
+            _context.unbindService(connService);
+        } catch (IllegalArgumentException ignored) {
+            // Nothing was registered; nothing to release.
+        }
+        isBound = false;
+        try {
+            isBound = _context.bindService(printerServiceIntent(), connService, Context.BIND_AUTO_CREATE);
+        } catch (SecurityException ignored) {
+            isBound = false;
+        }
+    }
+
+    /**
+     * Reports the service as unavailable and schedules a reconnect attempt, so
+     * the next command has a working binding even though this one fails.
+     */
+    private void reportUnavailable(Result result) {
+        sendError(result, "UNAVAILABLE", "Printer service is not connected");
+        if (!isBound) {
+            mainHandler.post(this::rebind);
+        }
+    }
+
+    /**
+     * Completes the outstanding BIND_SERVICE call, if any. Every path out of
+     * bindService() must funnel through here so the Dart future always settles.
+     */
+    private void resolveBindResult(boolean success, String errorCode, String errorMessage) {
+        mainHandler.post(() -> {
+            Result pending = bindResultPending;
+            if (pending == null) {
+                return;
+            }
+            bindResultPending = null;
+            if (success) {
+                pending.success(true);
+            } else {
+                pending.error(errorCode, errorMessage, null);
+            }
+        });
+    }
+
     public void bindService(Result result) {
         if (_printerService != null) {
             result.success(true);
             return;
         }
+        if (bindResultPending != null) {
+            result.error("BIND_IN_PROGRESS", "A bind request is already pending", null);
+            return;
+        }
+
         bindResultPending = result;
-        Intent intent = new Intent();
-        intent.setPackage("woyou.aidlservice.jiuiv5");
-        intent.setAction("woyou.aidlservice.jiuiv5.IWoyouService");
-        _context.bindService(intent, connService, Context.BIND_AUTO_CREATE);
+
+        boolean accepted;
+        try {
+            accepted = _context.bindService(printerServiceIntent(), connService, Context.BIND_AUTO_CREATE);
+        } catch (SecurityException e) {
+            accepted = false;
+        }
+
+        if (accepted) {
+            isBound = true;
+        } else {
+            // Service missing, or not visible to this app because the host manifest
+            // lacks a <queries> entry for woyou.aidlservice.jiuiv5.
+            try {
+                _context.unbindService(connService);
+            } catch (IllegalArgumentException ignored) {
+                // Nothing was registered; nothing to release.
+            }
+            resolveBindResult(false, "SERVICE_UNAVAILABLE",
+                    "Sunmi printer service is not available on this device");
+        }
     }
 
     public void unbindService(Result result) {
-        if (_printerService != null) {
-            _context.unbindService(connService);
-            _printerService = null;
+        if (isBound) {
+            try {
+                _context.unbindService(connService);
+            } catch (IllegalArgumentException ignored) {
+                // Already unbound.
+            }
+            isBound = false;
         }
+        _printerService = null;
+        resolveBindResult(false, "UNBOUND", "Service was unbound before binding completed");
         result.success(true);
+    }
+
+    /**
+     * Releases the service connection when the Flutter engine goes away, so a
+     * detached engine never leaks a bound connection.
+     */
+    public void dispose() {
+        if (isBound) {
+            try {
+                _context.unbindService(connService);
+            } catch (IllegalArgumentException ignored) {
+                // Already unbound.
+            }
+            isBound = false;
+        }
+        _printerService = null;
+        pendingCallbacks.clear();
+        resolveBindResult(false, "UNBOUND", "Flutter engine detached before binding completed");
     }
 
     private void runOnBackground(Runnable task) {
@@ -82,6 +229,66 @@ public class SunmiTaskPrinterMethod {
      * Dummy callback to satisfy Sunmi AIDL requirements without blocking Flutter.
      * In buffer mode, physical callbacks do not fire until commit.
      */
+    /**
+     * Bridges a Sunmi AIDL callback to a Flutter Result, settling it exactly
+     * once with the outcome the firmware actually reports. Use this for
+     * commands whose success cannot be assumed from a successful dispatch,
+     * such as kicking the cash drawer.
+     */
+    private ICallback createResultCallback(Result result, String operation) {
+        AtomicBoolean settled = new AtomicBoolean(false);
+        ICallback[] holder = new ICallback[1];
+
+        Runnable onTimeout = () -> {
+            if (settled.compareAndSet(false, true)) {
+                pendingCallbacks.remove(holder[0]);
+                result.error("TIMEOUT", operation + " reported no result within "
+                        + CALLBACK_TIMEOUT_MS + "ms", null);
+            }
+        };
+
+        ICallback callback = new ICallback.Stub() {
+            @Override
+            public void onRunResult(boolean isSuccess) {
+                settle(isSuccess, isSuccess ? null : "OPERATION_FAILED",
+                        operation + " was rejected by the printer");
+            }
+
+            @Override
+            public void onReturnString(String resultStr) {
+            }
+
+            @Override
+            public void onRaiseException(int code, String msg) {
+                settle(false, "PRINTER_EXCEPTION", operation + " failed (code " + code + "): " + msg);
+            }
+
+            @Override
+            public void onPrintResult(int code, String msg) {
+            }
+
+            private void settle(boolean success, String errorCode, String errorMessage) {
+                if (!settled.compareAndSet(false, true)) {
+                    return;
+                }
+                pendingCallbacks.remove(holder[0]);
+                mainHandler.removeCallbacks(onTimeout);
+                mainHandler.post(() -> {
+                    if (success) {
+                        result.success(true);
+                    } else {
+                        result.error(errorCode, errorMessage, null);
+                    }
+                });
+            }
+        };
+
+        holder[0] = callback;
+        pendingCallbacks.add(callback);
+        mainHandler.postDelayed(onTimeout, CALLBACK_TIMEOUT_MS);
+        return callback;
+    }
+
     private ICallback createDummyCallback() {
         return new ICallback.Stub() {
             @Override
@@ -114,7 +321,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.printerInit(createDummyCallback());
@@ -159,7 +366,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.printText(text, createDummyCallback());
@@ -174,7 +381,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.setAlignment(alignment, createDummyCallback());
@@ -189,7 +396,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.setFontSize(fontSize, createDummyCallback());
@@ -204,7 +411,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.printColumnsText(stringColumns, columnWidth, columnAlignment, createDummyCallback());
@@ -219,7 +426,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.printBitmap(bitmap, createDummyCallback());
@@ -234,7 +441,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.cutPaper(createDummyCallback());
@@ -314,11 +521,11 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
-                _printerService.openDrawer(createDummyCallback());
-                sendSuccess(result, true);
+                // Resolved by the callback: a dispatched kick is not an opened drawer.
+                _printerService.openDrawer(createResultCallback(result, "Opening the cash drawer"));
             } catch (RemoteException e) {
                 sendError(result, "REMOTE_EXCEPTION", e.getMessage());
             }
@@ -329,12 +536,12 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendSuccess(result, false);
+                    reportUnavailable(result);
                     return;
                 }
                 sendSuccess(result, _printerService.getDrawerStatus());
             } catch (RemoteException e) {
-                sendSuccess(result, false);
+                sendError(result, "REMOTE_EXCEPTION", e.getMessage());
             }
         });
     }
@@ -343,12 +550,12 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendSuccess(result, 0);
+                    reportUnavailable(result);
                     return;
                 }
                 sendSuccess(result, _printerService.getOpenDrawerTimes());
             } catch (RemoteException e) {
-                sendSuccess(result, 0);
+                sendError(result, "REMOTE_EXCEPTION", e.getMessage());
             }
         });
     }
@@ -357,7 +564,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.lineWrap(lines, createDummyCallback());
@@ -372,7 +579,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.sendRAWData(bytes, createDummyCallback());
@@ -432,7 +639,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.printQRCode(data, moduleSize, errorLevel, createDummyCallback());
@@ -447,7 +654,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.printBarCode(data, barcodeType, height, width, textPosition, createDummyCallback());
@@ -477,7 +684,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.sendLCDString(string, createDummyLcdCallback());
@@ -492,7 +699,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.sendLCDBitmap(bitmap, createDummyLcdCallback());
@@ -507,7 +714,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.sendLCDDoubleString(topText, bottomText, createDummyLcdCallback());
@@ -522,7 +729,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.sendLCDFillString(string, size, fill, createDummyLcdCallback());
@@ -537,7 +744,7 @@ public class SunmiTaskPrinterMethod {
         runOnBackground(() -> {
             try {
                 if (_printerService == null) {
-                    sendError(result, "UNAVAILABLE", "Service disconnected");
+                    reportUnavailable(result);
                     return;
                 }
                 _printerService.sendLCDMultiString(text, align, createDummyLcdCallback());

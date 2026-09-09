@@ -298,16 +298,29 @@ class SunmiTaskPrinter {
   }
 
   /// Sends electrical pulse currents to trip standard outer connection cash drawer relays.
+  ///
+  /// Completes only once the printer firmware confirms the kick. Throws a
+  /// [PlatformException] if the drawer did not open, with code `OPERATION_FAILED`
+  /// (rejected), `PRINTER_EXCEPTION` (firmware error), `UNAVAILABLE` (printer
+  /// service not connected) or `TIMEOUT` (no answer from the firmware).
   static Future<void> openDrawer() async {
     await _channel.invokeMethod("OPEN_DRAWER");
   }
 
   /// Verifies if a valid link loop context is established with the terminal drawer mechanism.
+  ///
+  /// Returns `false` only when the printer genuinely reports no drawer attached.
+  /// Throws a [PlatformException] with code `UNAVAILABLE` when the printer
+  /// service itself is unreachable, so a dead binding is never mistaken for
+  /// missing hardware.
   static Future<bool> drawerStatus() async {
     return await _channel.invokeMethod<bool>("DRAWER_STATUS") ?? false;
   }
 
   /// Returns total tracked lifetime open counts recorded directly from local peripheral memory blocks.
+  ///
+  /// Throws a [PlatformException] with code `UNAVAILABLE` when the printer
+  /// service is unreachable, rather than reporting a count of zero.
   static Future<int> drawerTimesOpen() async {
     return await _channel.invokeMethod<int>("DRAWER_OPENED") ?? 0;
   }
